@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js First-Person Dungeon Crawler</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+  </head>
+  <body class="bg-dark text-white text-center">
+    <div
+      class="container-fluid"
+      style="
+        z-index: 9;
+        background-color: rgba(0, 0, 0, 0.5);
+        position: fixed;
+        width: 100%;
+      "
+    >
+      <h1>DungeonVerse</h1>
+      <p>
+        Use the arrow keys or WASD to move and turn. Swipe left or right to turn
+        and swipe up or down to move forward or backward.
+      </p>
+    </div>
+    <script>
+      // Basic Three.js setup
+      let scene, camera, renderer, controls;
+      const wallSize = 10;
+      const player = { x: 1, y: 1, direction: 0 }; // Initial player position and facing direction (0: +Z)
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      // Dungeon grid map (1 = wall, 0 = empty space)
+      const dungeonMap = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 1, 0, 1, 1, 1, 1],
+        [1, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 1, 0, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      ];
+
+      // Initialize the scene
+      function init() {
+        scene = new THREE.Scene();
+
+        // Set up camera
+        camera = new THREE.PerspectiveCamera(
+          100,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+        camera.position.set(
+          player.x * wallSize,
+          wallSize / 2,
+          player.y * wallSize
+        );
+        camera.lookAt(
+          player.x * wallSize,
+          wallSize / 2,
+          (player.y + 1) * wallSize
+        );
+
+        // Set up renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Handle window resize
+        window.addEventListener("resize", onWindowResize, false);
+
+        // Add lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(1, 1, 1).normalize();
+        scene.add(directionalLight);
+
+        // Load wall texture
+        const wallTexture = new THREE.TextureLoader().load("wall.jpg");
+        const wallMaterial = new THREE.MeshStandardMaterial({
+          map: wallTexture,
+        });
+
+        // Create dungeon walls based on the map
+        for (let row = 0; row < dungeonMap.length; row++) {
+          for (let col = 0; col < dungeonMap[row].length; col++) {
+            if (dungeonMap[row][col] === 1) {
+              const wall = new THREE.Mesh(
+                new THREE.BoxGeometry(wallSize, wallSize, wallSize),
+                wallMaterial
+              );
+              wall.position.set(col * wallSize, wallSize / 2, row * wallSize);
+              scene.add(wall);
+            }
+          }
+        }
+
+        // Add floor
+        const floorTexture = new THREE.TextureLoader().load("floor.png");
+        const floorMaterial = new THREE.MeshStandardMaterial({
+          map: floorTexture,
+        });
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(
+            dungeonMap[0].length * wallSize,
+            dungeonMap.length * wallSize
+          ),
+          floorMaterial
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.set(
+          (dungeonMap[0].length / 2 - 0.5) * wallSize,
+          0,
+          (dungeonMap.length / 2 - 0.5) * wallSize
+        );
+        scene.add(floor);
+
+        // Add ceiling
+        const ceilingTexture = new THREE.TextureLoader().load("ceiling.png");
+        ceilingTexture.wrapS = THREE.RepeatWrapping;
+        ceilingTexture.wrapT = THREE.RepeatWrapping;
+        ceilingTexture.repeat.set(10, 5);
+        const ceilingMaterial = new THREE.MeshStandardMaterial({
+          map: ceilingTexture,
+        });
+        const ceiling = new THREE.Mesh(
+          new THREE.PlaneGeometry(
+            dungeonMap[0].length * wallSize,
+            dungeonMap.length * wallSize
+          ),
+          ceilingMaterial
+        );
+        ceiling.rotation.x = Math.PI / 2;
+        ceiling.position.set(
+          (dungeonMap[0].length / 2 - 0.5) * wallSize,
+          wallSize,
+          (dungeonMap.length / 2 - 0.5) * wallSize
+        );
+        scene.add(ceiling);
+
+        // Add event listener for player controls
+        document.addEventListener("keydown", handleKeyDown);
+        document.addEventListener("touchstart", handleTouchStart);
+        document.addEventListener("touchmove", handleTouchMove);
+        animate();
+      }
+
+      // Handle window resize
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      // Handle player movement and rotation
+      function handleKeyDown(event) {
+        const moveStep = 1; // Move one tile at a time
+        const dirX = Math.round(Math.sin(player.direction));
+        const dirZ = Math.round(Math.cos(player.direction));
+
+        switch (event.key) {
+          case "ArrowUp": // Move forward
+          case "w": // Move forward
+            if (!isWall(player.x + dirX, player.y + dirZ)) {
+              player.x += dirX;
+              player.y += dirZ;
+            }
+            break;
+          case "s": // Move backward
+          case "ArrowDown": // Move backward
+            if (!isWall(player.x - dirX, player.y - dirZ)) {
+              player.x -= dirX;
+              player.y -= dirZ;
+            }
+            break;
+          case "a": // Turn left
+          case "ArrowLeft": // Turn left
+            player.direction += Math.PI / 2;
+            break;
+          case "ArrowRight": // Turn right
+          case "d": // Turn right
+            player.direction -= Math.PI / 2;
+            break;
+        }
+
+        // Update camera position and direction
+        camera.position.set(
+          player.x * wallSize,
+          wallSize / 2,
+          player.y * wallSize
+        );
+        const lookAtX =
+          player.x * wallSize + Math.sin(player.direction) * wallSize;
+        const lookAtZ =
+          player.y * wallSize + Math.cos(player.direction) * wallSize;
+        camera.lookAt(lookAtX, wallSize / 2, lookAtZ);
+      }
+
+      // Handle touch start
+      function handleTouchStart(event) {
+        touchStartX = event.touches[0].clientX;
+        touchStartY = event.touches[0].clientY;
+      }
+
+      // Handle touch move
+      function handleTouchMove(event) {
+        if (!touchStartX || !touchStartY) {
+          return;
+        }
+
+        const touchEndX = event.touches[0].clientX;
+        const touchEndY = event.touches[0].clientY;
+
+        const diffX = touchStartX - touchEndX;
+        const diffY = touchStartY - touchEndY;
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+          // Horizontal swipe
+          if (diffX > 0) {
+            // Swipe left
+            player.direction -= Math.PI / 2;
+          } else {
+            // Swipe right
+            player.direction += Math.PI / 2;
+          }
+        } else {
+          // Vertical swipe
+          const dirX = Math.round(Math.sin(player.direction));
+          const dirZ = Math.round(Math.cos(player.direction));
+          if (diffY > 0) {
+            // Swipe up
+            if (!isWall(player.x + dirX, player.y + dirZ)) {
+              player.x += dirX;
+              player.y += dirZ;
+            }
+          } else {
+            // Swipe down
+            if (!isWall(player.x - dirX, player.y - dirZ)) {
+              player.x -= dirX;
+              player.y -= dirZ;
+            }
+          }
+        }
+
+        // Reset touch start coordinates
+        touchStartX = 0;
+        touchStartY = 0;
+
+        // Update camera position and direction
+        camera.position.set(
+          player.x * wallSize,
+          wallSize / 2,
+          player.y * wallSize
+        );
+        const lookAtX =
+          player.x * wallSize + Math.sin(player.direction) * wallSize;
+        const lookAtZ =
+          player.y * wallSize + Math.cos(player.direction) * wallSize;
+        camera.lookAt(lookAtX, wallSize / 2, lookAtZ);
+      }
+
+      // Check if a position is a wall
+      function isWall(x, y) {
+        return dungeonMap[Math.round(y)]?.[Math.round(x)] === 1;
+      }
+
+      // Render the scene
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+
+      init();
+    </script>
+  </body>
+</html>
