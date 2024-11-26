@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Three.js First-Person Dungeon Crawler</title>
+    <title>DungeonVerse</title>
     <style>
       body {
         margin: 0;
@@ -18,6 +18,8 @@
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+    <script src="js/utils/audio.js"></script>
+    <script src="js/setup.js"></script>
   </head>
   <body class="bg-dark text-white text-center">
     <div
@@ -36,10 +38,10 @@
       </p>
     </div>
     <script>
-      // Basic Three.js setup
       let scene, camera, renderer, controls;
       const wallSize = 10;
       const player = { x: 1, y: 1, direction: 0 }; // Initial player position and facing direction (0: +Z)
+      const assetsPath = "assets/";
       let touchStartX = 0;
       let touchStartY = 0;
 
@@ -55,6 +57,8 @@
       // Initialize the scene
       function init() {
         scene = new THREE.Scene();
+
+        scene.fog = new THREE.Fog(0x222222, 10, 50);
 
         // Set up camera
         camera = new THREE.PerspectiveCamera(
@@ -90,8 +94,12 @@
         directionalLight.position.set(1, 1, 1).normalize();
         scene.add(directionalLight);
 
+        setup_flicker(scene);
+
         // Load wall texture
-        const wallTexture = new THREE.TextureLoader().load("wall.jpg");
+        const wallTexture = new THREE.TextureLoader().load(
+          assetsPath + "img/wall.jpg"
+        );
         const wallMaterial = new THREE.MeshStandardMaterial({
           map: wallTexture,
         });
@@ -111,7 +119,9 @@
         }
 
         // Add floor
-        const floorTexture = new THREE.TextureLoader().load("floor.png");
+        const floorTexture = new THREE.TextureLoader().load(
+          assetsPath + "img/floor.png"
+        );
         const floorMaterial = new THREE.MeshStandardMaterial({
           map: floorTexture,
         });
@@ -131,7 +141,9 @@
         scene.add(floor);
 
         // Add ceiling
-        const ceilingTexture = new THREE.TextureLoader().load("ceiling.png");
+        const ceilingTexture = new THREE.TextureLoader().load(
+          assetsPath + "img/ceiling.png"
+        );
         ceilingTexture.wrapS = THREE.RepeatWrapping;
         ceilingTexture.wrapT = THREE.RepeatWrapping;
         ceilingTexture.repeat.set(10, 5);
@@ -152,6 +164,8 @@
           (dungeonMap.length / 2 - 0.5) * wallSize
         );
         scene.add(ceiling);
+
+        setup_particles(scene);
 
         // Add event listener for player controls
         document.addEventListener("keydown", handleKeyDown);
@@ -209,6 +223,8 @@
         const lookAtZ =
           player.y * wallSize + Math.cos(player.direction) * wallSize;
         camera.lookAt(lookAtX, wallSize / 2, lookAtZ);
+
+        play_sound("walk1.wav");
       }
 
       // Handle touch start
@@ -276,12 +292,17 @@
 
       // Check if a position is a wall
       function isWall(x, y) {
-        return dungeonMap[Math.round(y)]?.[Math.round(x)] === 1;
+        const check = dungeonMap[Math.round(y)]?.[Math.round(x)] === 1;
+        if (check) {
+          play_sound("bash.wav");
+        }
+        return check;
       }
 
       // Render the scene
       function animate() {
         requestAnimationFrame(animate);
+        particleSystem.rotation.y += 0.01;
         renderer.render(scene, camera);
       }
 
