@@ -28,12 +28,17 @@ function setup_particles(scene) {
 
   const particleMaterial = new THREE.PointsMaterial({
     color: 0xffffff, // Particle color
-    size: 0.1, // Size of particles
+    size: 0.3, // Size of particles
     transparent: true,
     opacity: 0.8,
   });
 
+  particleMaterial.map = new THREE.TextureLoader().load("assets/img/glow.png");
+  particleMaterial.blending = THREE.AdditiveBlending; // Creates a glowing effect
+  particleMaterial.depthWrite = false;
+
   particleSystem = new THREE.Points(particles, particleMaterial);
+  particleSystem.position.y = 5; // Place in front of the camera
   particleSystem.position.x = 30; // Place in front of the camera
   particleSystem.position.z = 30; // Place in front of the camera
   scene.add(particleSystem);

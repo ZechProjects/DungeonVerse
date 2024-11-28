@@ -17,8 +17,10 @@
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
-    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/gsap.min.js"></script>
     <script src="js/utils/audio.js"></script>
+    <script src="js/utils/sprites.js"></script>
     <script src="js/setup.js"></script>
   </head>
   <body class="bg-dark text-white text-center">
@@ -44,6 +46,9 @@
       const assetsPath = "assets/";
       let touchStartX = 0;
       let touchStartY = 0;
+
+      let key = null;
+      let isTransitioning = false;
 
       // Dungeon grid map (1 = wall, 0 = empty space)
       const dungeonMap = [
@@ -98,7 +103,7 @@
 
         // Load wall texture
         const wallTexture = new THREE.TextureLoader().load(
-          assetsPath + "img/wall.jpg"
+          assetsPath + "img/wall2.png"
         );
         const wallMaterial = new THREE.MeshStandardMaterial({
           map: wallTexture,
@@ -167,6 +172,16 @@
 
         setup_particles(scene);
 
+        key = load_sprite(
+          scene,
+          "key",
+          new THREE.Vector3(80, 4, 20),
+          3,
+          new THREE.Euler(0, -90, 0)
+        );
+
+        console.log("key", key);
+
         // Add event listener for player controls
         document.addEventListener("keydown", handleKeyDown);
         document.addEventListener("touchstart", handleTouchStart);
@@ -183,46 +198,63 @@
 
       // Handle player movement and rotation
       function handleKeyDown(event) {
+        if (isTransitioning) return;
+
         const moveStep = 1; // Move one tile at a time
         const dirX = Math.round(Math.sin(player.direction));
         const dirZ = Math.round(Math.cos(player.direction));
+        let newX = player.x;
+        let newY = player.y;
+        let newDirection = player.direction;
 
         switch (event.key) {
           case "ArrowUp": // Move forward
           case "w": // Move forward
             if (!isWall(player.x + dirX, player.y + dirZ)) {
-              player.x += dirX;
-              player.y += dirZ;
+              newX += dirX;
+              newY += dirZ;
             }
             break;
           case "s": // Move backward
           case "ArrowDown": // Move backward
             if (!isWall(player.x - dirX, player.y - dirZ)) {
-              player.x -= dirX;
-              player.y -= dirZ;
+              newX -= dirX;
+              newY -= dirZ;
             }
             break;
           case "a": // Turn left
           case "ArrowLeft": // Turn left
-            player.direction += Math.PI / 2;
+            newDirection += Math.PI / 2;
             break;
           case "ArrowRight": // Turn right
           case "d": // Turn right
-            player.direction -= Math.PI / 2;
+            newDirection -= Math.PI / 2;
             break;
         }
 
-        // Update camera position and direction
-        camera.position.set(
-          player.x * wallSize,
-          wallSize / 2,
-          player.y * wallSize
-        );
-        const lookAtX =
-          player.x * wallSize + Math.sin(player.direction) * wallSize;
-        const lookAtZ =
-          player.y * wallSize + Math.cos(player.direction) * wallSize;
-        camera.lookAt(lookAtX, wallSize / 2, lookAtZ);
+        // Update player position and direction with smooth transition
+        isTransitioning = true;
+        gsap.to(player, {
+          x: newX,
+          y: newY,
+          direction: newDirection,
+          duration: 0.3, // Adjust this value to change the transition speed
+          onUpdate: () => {
+            camera.position.set(
+              player.x * wallSize,
+              wallSize / 2,
+              player.y * wallSize
+            );
+            const lookAtX =
+              player.x * wallSize + Math.sin(player.direction) * wallSize;
+            const lookAtZ =
+              player.y * wallSize + Math.cos(player.direction) * wallSize;
+            camera.lookAt(lookAtX, wallSize / 2, lookAtZ);
+          },
+          onComplete: () => {
+            isTransitioning = false;
+          },
+        });
 
         play_sound("walk1.wav");
       }
@@ -235,7 +267,7 @@
 
       // Handle touch move
       function handleTouchMove(event) {
-        if (!touchStartX || !touchStartY) {
+        if (!touchStartX || !touchStartY || isTransitioning) {
           return;
         }
 
@@ -244,15 +276,18 @@
 
         const diffX = touchStartX - touchEndX;
         const diffY = touchStartY - touchEndY;
+        let newX = player.x;
+        let newY = player.y;
+        let newDirection = player.direction;
 
         if (Math.abs(diffX) > Math.abs(diffY)) {
           // Horizontal swipe
           if (diffX > 0) {
             // Swipe left
-            player.direction -= Math.PI / 2;
+            newDirection -= Math.PI / 2;
           } else {
             // Swipe right
-            player.direction += Math.PI / 2;
+            newDirection += Math.PI / 2;
           }
         } else {
           // Vertical swipe
@@ -261,14 +296,14 @@
           if (diffY > 0) {
             // Swipe up
             if (!isWall(player.x + dirX, player.y + dirZ)) {
-              player.x += dirX;
-              player.y += dirZ;
+              newX += dirX;
+              newY += dirZ;
             }
           } else {
             // Swipe down
             if (!isWall(player.x - dirX, player.y - dirZ)) {
-              player.x -= dirX;
-              player.y -= dirZ;
+              newX -= dirX;
+              newY -= dirZ;
             }
           }
         }
@@ -277,17 +312,29 @@
         touchStartX = 0;
         touchStartY = 0;
 
-        // Update camera position and direction
-        camera.position.set(
-          player.x * wallSize,
-          wallSize / 2,
-          player.y * wallSize
-        );
-        const lookAtX =
-          player.x * wallSize + Math.sin(player.direction) * wallSize;
-        const lookAtZ =
-          player.y * wallSize + Math.cos(player.direction) * wallSize;
-        camera.lookAt(lookAtX, wallSize / 2, lookAtZ);
+        // Update player position and direction with smooth transition
+        isTransitioning = true;
+        gsap.to(player, {
+          x: newX,
+          y: newY,
+          direction: newDirection,
+          duration: 0.3, // Adjust this value to change the transition speed
+          onUpdate: () => {
+            camera.position.set(
+              player.x * wallSize,
+              wallSize / 2,
+              player.y * wallSize
+            );
+            const lookAtX =
+              player.x * wallSize + Math.sin(player.direction) * wallSize;
+            const lookAtZ =
+              player.y * wallSize + Math.cos(player.direction) * wallSize;
+            camera.lookAt(lookAtX, wallSize / 2, lookAtZ);
+          },
+          onComplete: () => {
+            isTransitioning = false;
+          },
+        });
       }
 
       // Check if a position is a wall
