@@ -40,7 +40,7 @@ function handleKeyDown(event) {
     x: newX,
     y: newY,
     direction: newDirection,
-    duration: 0.3, // Adjust this value to change the transition speed
+    duration: MOVEMENT_TRANSITION, // Adjust this value to change the transition speed
     onUpdate: () => {
       camera.position.set(
         player.x * wallSize,
@@ -63,12 +63,14 @@ function handleKeyDown(event) {
 
 // Handle touch start
 function handleTouchStart(event) {
+  event.preventDefault(); // Prevent default touch behavior (e.g., scrolling)
   touchStartX = event.touches[0].clientX;
   touchStartY = event.touches[0].clientY;
 }
 
 // Handle touch move
 function handleTouchMove(event) {
+  event.preventDefault(); // Prevent default touch behavior (e.g., scrolling)
   if (!touchStartX || !touchStartY || isTransitioning) {
     return;
   }
@@ -120,7 +122,7 @@ function handleTouchMove(event) {
     x: newX,
     y: newY,
     direction: newDirection,
-    duration: 0.3, // Adjust this value to change the transition speed
+    duration: MOVEMENT_TRANSITION, // Adjust this value to change the transition speed
     onUpdate: () => {
       camera.position.set(
         player.x * wallSize,

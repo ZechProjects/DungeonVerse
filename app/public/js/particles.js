@@ -1,4 +1,4 @@
-function setup_particles(scene) {
+function setup_particles() {
   const particles = new THREE.BufferGeometry();
   const particleCount = 1000; // Number of particles
   const positions = new Float32Array(particleCount * 3); // x, y, z for each particle

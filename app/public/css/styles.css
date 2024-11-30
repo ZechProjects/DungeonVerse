@@ -1,0 +1,13 @@
+body {
+  margin: 0;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+}
+.navbar-nav .nav-link {
+  border-radius: 15px;
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: 2px solid white;
+}

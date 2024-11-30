@@ -33,31 +33,21 @@ function init() {
   setup_flicker(scene);
 
   // Load wall texture
-  const wallTexture = new THREE.TextureLoader().load(
-    assetsPath + "img/wall2.png"
-  );
-  const wallMaterial = new THREE.MeshStandardMaterial({
+  wallTexture = new THREE.TextureLoader().load(assetsPath + "img/wall2.png");
+  wallMaterial = new THREE.MeshStandardMaterial({
     map: wallTexture,
   });
 
   // Create dungeon walls based on the map
-  for (let row = 0; row < dungeonMap.length; row++) {
-    for (let col = 0; col < dungeonMap[row].length; col++) {
-      if (dungeonMap[row][col] === 1) {
-        const wall = new THREE.Mesh(
-          new THREE.BoxGeometry(wallSize, wallSize, wallSize),
-          wallMaterial
-        );
-        wall.position.set(col * wallSize, wallSize / 2, row * wallSize);
-        scene.add(wall);
-      }
-    }
-  }
+  createWalls();
 
   // Add floor
   const floorTexture = new THREE.TextureLoader().load(
-    assetsPath + "img/floor.png"
+    assetsPath + "img/wall3.png"
   );
+  floorTexture.wrapS = THREE.RepeatWrapping;
+  floorTexture.wrapT = THREE.RepeatWrapping;
+  floorTexture.repeat.set(mapSizeX, mapSizeY);
   const floorMaterial = new THREE.MeshStandardMaterial({
     map: floorTexture,
   });
@@ -82,7 +72,7 @@ function init() {
   );
   ceilingTexture.wrapS = THREE.RepeatWrapping;
   ceilingTexture.wrapT = THREE.RepeatWrapping;
-  ceilingTexture.repeat.set(10, 5);
+  ceilingTexture.repeat.set(mapSizeX, mapSizeY);
   const ceilingMaterial = new THREE.MeshStandardMaterial({
     map: ceilingTexture,
   });
@@ -101,10 +91,9 @@ function init() {
   );
   scene.add(ceiling);
 
-  setup_particles(scene);
+  setup_particles();
 
   key = load_sprite(
-    scene,
     "key",
     new THREE.Vector3(80, 4, 20),
     3,
@@ -132,6 +121,7 @@ function isWall(x, y) {
   const check = dungeonMap[Math.round(y)]?.[Math.round(x)] === 1;
   if (check) {
     play_sound("bash.wav");
+    shakeScreen();
   }
   return check;
 }
@@ -141,4 +131,53 @@ function animate() {
   requestAnimationFrame(animate);
   particleSystem.rotation.y += 0.01;
   renderer.render(scene, camera);
+}
+
+function createWalls() {
+  // Create dungeon walls based on the map
+  for (let row = 0; row < dungeonMap.length; row++) {
+    for (let col = 0; col < dungeonMap[row].length; col++) {
+      if (dungeonMap[row][col] === 1) {
+        const wall = new THREE.Mesh(
+          new THREE.BoxGeometry(wallSize, wallSize, wallSize),
+          wallMaterial
+        );
+        wall.position.set(col * wallSize, wallSize / 2, row * wallSize);
+        scene.add(wall);
+      }
+    }
+  }
+}
+
+function shakeScreen(duration = 0.2, intensity = 5) {
+  const canvas = renderer.domElement;
+  const timeline = gsap.timeline();
+
+  intensity = Math.random() * intensity + 1;
+
+  timeline.to(canvas, {
+    x: `+=${intensity}`,
+    y: `+=${intensity}`,
+    duration: duration / 4,
+    ease: "power1.inOut",
+    yoyo: true,
+    repeat: 3,
+    onComplete: () => {
+      gsap.set(canvas, { x: 0, y: 0 });
+    },
+  });
+}
+
+function generateNewDungeon() {
+  // Example usage:
+  mapSizeX = 20;
+  mapSizeY = 5;
+
+  dungeonMap = generateConnectedDungeonMap(mapSizeX, mapSizeY);
+  // Remove existing walls
+  scene.children = scene.children.filter(
+    (child) => child.type !== "Mesh" || child.geometry.type !== "BoxGeometry"
+  );
+  // Recreate walls with textures
+  createWalls();
 }

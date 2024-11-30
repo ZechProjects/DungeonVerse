@@ -1,5 +1,4 @@
 function load_sprite(
-  scene,
   img,
   position,
   scale = 1,

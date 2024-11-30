@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Explore Dungeons</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        justify-content: center;
+        margin: 0;
+        background-color: #f0f0f0;
+      }
+    </style>
+  </head>
+  <body class="bg-dark text-white text-center">
+    <div id="nav-placeholder"></div>
+    <script>
+      fetch("nav.html")
+        .then((response) => response.text())
+        .then((data) => {
+          document.getElementById("nav-placeholder").innerHTML = data;
+        });
+    </script>
+
+    <div class="container mt-5">
+      <h1 class="mb-4">Dungeon Gallery</h1>
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <input
+            type="text"
+            id="search-bar"
+            class="form-control"
+            placeholder="Search dungeons..."
+          />
+        </div>
+        <div class="col-md-4">
+          <select id="filter" class="form-control">
+            <option value="all">All</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+      <div id="dungeon-gallery" class="row">
+        <!-- Dungeon cards will be inserted here -->
+      </div>
+
+      <div
+        class="pagination d-flex justify-content-center align-items-center mt-4"
+      >
+        <button id="prev-page" class="btn btn-secondary mr-2">Previous</button>
+        <span id="page-info" class="mx-2"></span>
+        <button id="next-page" class="btn btn-secondary ml-2">Next</button>
+      </div>
+    </div>
+
+    <script>
+      const dungeons = [
+        {
+          name: "Pixel Dungeon",
+          rating: 4.5,
+          plays: 100,
+          image: "assets/img/dungeons/1.png",
+        },
+        {
+          name: "Old School Dungeon",
+          rating: 3.5,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/2.png",
+        },
+        {
+          name: "Dungeon 2",
+          rating: 3.5,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/2.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/2.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/3.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/4.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/1.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/2.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/3.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/4.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/1.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/2.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/3.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/4.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/1.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/2.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/3.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/4.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/1.png",
+        },
+        {
+          name: "Dungeon 3",
+          rating: 3.9,
+          plays: Math.floor(Math.random() * 1000),
+          image: "assets/img/dungeons/2.png",
+        },
+        // Add more dungeons as needed
+      ];
+
+      const itemsPerPage = 8;
+      let currentPage = 1;
+
+      function displayDungeons(filteredDungeons, page = 1) {
+        const gallery = document.getElementById("dungeon-gallery");
+        gallery.innerHTML = "";
+        const start = (page - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedDungeons = filteredDungeons.slice(start, end);
+
+        paginatedDungeons.forEach((dungeon) => {
+          const dungeonCard = `
+            <div class="col-md-3 mb-4">
+              <div class="card">
+                <img src="${dungeon.image}" class="card-img-top" alt="${dungeon.name}">
+                <div class="card-body bg-dark">
+                  <h5 class="card-title">${dungeon.name}</h5>
+                    <p class="card-text">
+                      Plays: ${dungeon.plays}<br>
+                      Rating: ${dungeon.rating} ⭐
+                    </p>
+                    <button class="btn btn-primary">Play</button>
+                </div>
+              </div>
+            </div>
+          `;
+          gallery.innerHTML += dungeonCard;
+        });
+
+        document.getElementById(
+          "page-info"
+        ).textContent = `Page ${page} of ${Math.ceil(
+          filteredDungeons.length / itemsPerPage
+        )}`;
+      }
+
+      function updatePagination(filteredDungeons) {
+        document.getElementById("prev-page").disabled = currentPage === 1;
+        document.getElementById("next-page").disabled =
+          currentPage === Math.ceil(filteredDungeons.length / itemsPerPage);
+      }
+
+      document
+        .getElementById("search-bar")
+        .addEventListener("input", function () {
+          const searchTerm = this.value.toLowerCase();
+          const filteredDungeons = dungeons.filter((dungeon) =>
+            dungeon.name.toLowerCase().includes(searchTerm)
+          );
+          currentPage = 1;
+          displayDungeons(filteredDungeons, currentPage);
+          updatePagination(filteredDungeons);
+        });
+
+      document.getElementById("filter").addEventListener("change", function () {
+        const filterValue = this.value;
+        const filteredDungeons =
+          filterValue === "all"
+            ? dungeons
+            : dungeons.filter((dungeon) => dungeon.difficulty === filterValue);
+        currentPage = 1;
+        displayDungeons(filteredDungeons, currentPage);
+        updatePagination(filteredDungeons);
+      });
+
+      document
+        .getElementById("prev-page")
+        .addEventListener("click", function () {
+          if (currentPage > 1) {
+            currentPage--;
+            const searchTerm = document
+              .getElementById("search-bar")
+              .value.toLowerCase();
+            const filterValue = document.getElementById("filter").value;
+            const filteredDungeons = dungeons.filter(
+              (dungeon) =>
+                dungeon.name.toLowerCase().includes(searchTerm) &&
+                (filterValue === "all" || dungeon.difficulty === filterValue)
+            );
+            displayDungeons(filteredDungeons, currentPage);
+            updatePagination(filteredDungeons);
+          }
+        });
+
+      document
+        .getElementById("next-page")
+        .addEventListener("click", function () {
+          const searchTerm = document
+            .getElementById("search-bar")
+            .value.toLowerCase();
+          const filterValue = document.getElementById("filter").value;
+          const filteredDungeons = dungeons.filter(
+            (dungeon) =>
+              dungeon.name.toLowerCase().includes(searchTerm) &&
+              (filterValue === "all" || dungeon.difficulty === filterValue)
+          );
+          if (currentPage < Math.ceil(filteredDungeons.length / itemsPerPage)) {
+            currentPage++;
+            displayDungeons(filteredDungeons, currentPage);
+            updatePagination(filteredDungeons);
+          }
+        });
+
+      // Initial display
+      displayDungeons(dungeons, currentPage);
+      updatePagination(dungeons);
+    </script>
+
+    <div id="connect-placeholder"></div>
+    <script>
+      fetch("connect.html")
+        .then((response) => response.text())
+        .then((data) => {
+          document.getElementById("connect-placeholder").innerHTML = data;
+        });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>
