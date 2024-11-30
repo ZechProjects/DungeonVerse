@@ -1,6 +1,5 @@
 body {
   margin: 0;
-  overflow: hidden;
 }
 canvas {
   display: block;
@@ -10,4 +9,9 @@ canvas {
   margin: 0 5px;
   padding: 5px 10px;
   border: 2px solid white;
+}
+
+.btn-primary {
+  background-color: #8c581f !important;
+  border-color: white !important;
 }

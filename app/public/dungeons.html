@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Explore Dungeons</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="css/styles.css" />
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
+    <script src="js/data/sample_dungeons.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -42,9 +44,9 @@
         <div class="col-md-4">
           <select id="filter" class="form-control">
             <option value="all">All</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
           </select>
         </div>
       </div>
@@ -62,130 +64,6 @@
     </div>
 
     <script>
-      const dungeons = [
-        {
-          name: "Pixel Dungeon",
-          rating: 4.5,
-          plays: 100,
-          image: "assets/img/dungeons/1.png",
-        },
-        {
-          name: "Old School Dungeon",
-          rating: 3.5,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/2.png",
-        },
-        {
-          name: "Dungeon 2",
-          rating: 3.5,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/2.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/2.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/3.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/4.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/1.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/2.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/3.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/4.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/1.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/2.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/3.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/4.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/1.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/2.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/3.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/4.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/1.png",
-        },
-        {
-          name: "Dungeon 3",
-          rating: 3.9,
-          plays: Math.floor(Math.random() * 1000),
-          image: "assets/img/dungeons/2.png",
-        },
-        // Add more dungeons as needed
-      ];
-
       const itemsPerPage = 8;
       let currentPage = 1;
 
@@ -203,9 +81,11 @@
                 <img src="${dungeon.image}" class="card-img-top" alt="${dungeon.name}">
                 <div class="card-body bg-dark">
                   <h5 class="card-title">${dungeon.name}</h5>
-                    <p class="card-text">
+                    <p class="card-text" style="font-size: 0.8em;">
+                      Difficulty: ${dungeon.difficulty}<br>
                       Plays: ${dungeon.plays}<br>
-                      Rating: ${dungeon.rating} ⭐
+                      Rating: ${dungeon.rating} ⭐<br>
+                      🔍 <a href="https://shapescan.xyz/address/${dungeon.address}" target="_blank">${dungeon.address}</a>
                     </p>
                     <button class="btn btn-primary">Play</button>
                 </div>
