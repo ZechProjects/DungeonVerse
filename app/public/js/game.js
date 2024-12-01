@@ -107,6 +107,13 @@ function init() {
   document.addEventListener("touchstart", handleTouchStart);
   document.addEventListener("touchmove", handleTouchMove);
   animate();
+
+  startGame();
+}
+
+function startGame() {
+  moves = 0;
+  GAME_STATE = GAME_STATES.NAVIGATION;
 }
 
 // Handle window resize

@@ -59,6 +59,77 @@
       </p>
     </div>
 
+    <div
+      id="gameInfo"
+      style="
+        display: block;
+        z-index: 9;
+        position: absolute;
+        top: 60px;
+        left: 10px;
+      "
+      class="text-white"
+    >
+      <p>Moves: <span id="moves">0</span></p>
+    </div>
+
+    <div
+      class="modal fade"
+      id="gameEndModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="gameEndModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content bg-dark text-white">
+          <div class="modal-header">
+            <h5 class="modal-title" id="gameEndModalLabel">Game Over</h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Congratulations! You have reached the end of the dungeon.</p>
+            <p>Your total moves: <span id="totalMoves">0</span></p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="restartGame()"
+            >
+              Play Again
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function showGameEndModal(moves) {
+        document.getElementById("totalMoves").innerText = moves;
+        $("#gameEndModal").modal("show");
+      }
+
+      function restartGame() {
+        // Logic to restart the game
+        location.reload();
+      }
+    </script>
+
     <div id="connect-placeholder"></div>
     <script>
       fetch("connect.html")
@@ -67,6 +138,7 @@
           document.getElementById("connect-placeholder").innerHTML = data;
         });
     </script>
+
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>

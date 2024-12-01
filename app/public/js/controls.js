@@ -1,6 +1,27 @@
+function checkIsEndPoint() {
+  if (GAME_STATE === GAME_STATES.ENDED) return;
+
+  console.log(
+    "player.x",
+    player.x,
+    "endX",
+    endX,
+    "player.y",
+    player.y,
+    "endY",
+    endY
+  );
+
+  if (player.x === endX && player.y === endY) {
+    GAME_STATE = GAME_STATES.ENDED;
+    showGameEndModal(moves);
+  }
+}
+
 // Handle player movement and rotation
 function handleKeyDown(event) {
   if (isTransitioning) return;
+  if (GAME_STATE !== GAME_STATES.NAVIGATION) return;
 
   const moveStep = 1; // Move one tile at a time
   const dirX = Math.round(Math.sin(player.direction));
@@ -15,6 +36,7 @@ function handleKeyDown(event) {
       if (!isWall(player.x + dirX, player.y + dirZ)) {
         newX += dirX;
         newY += dirZ;
+        increaseMoves();
       }
       break;
     case "s": // Move backward
@@ -22,6 +44,7 @@ function handleKeyDown(event) {
       if (!isWall(player.x - dirX, player.y - dirZ)) {
         newX -= dirX;
         newY -= dirZ;
+        increaseMoves();
       }
       break;
     case "a": // Turn left
@@ -55,10 +78,16 @@ function handleKeyDown(event) {
     },
     onComplete: () => {
       isTransitioning = false;
+      checkIsEndPoint();
     },
   });
 
   play_sound("walk1.wav");
+}
+
+function increaseMoves() {
+  moves++;
+  document.getElementById("moves").innerText = moves;
 }
 
 // Handle touch start
@@ -70,6 +99,8 @@ function handleTouchStart(event) {
 
 // Handle touch move
 function handleTouchMove(event) {
+  if (GAME_STATE !== GAME_STATES.NAVIGATION) return;
+
   event.preventDefault(); // Prevent default touch behavior (e.g., scrolling)
   if (!touchStartX || !touchStartY || isTransitioning) {
     return;
@@ -102,12 +133,14 @@ function handleTouchMove(event) {
       if (!isWall(player.x + dirX, player.y + dirZ)) {
         newX += dirX;
         newY += dirZ;
+        increaseMoves();
       }
     } else {
       // Swipe down
       if (!isWall(player.x - dirX, player.y - dirZ)) {
         newX -= dirX;
         newY -= dirZ;
+        increaseMoves();
       }
     }
   }
@@ -137,6 +170,7 @@ function handleTouchMove(event) {
     },
     onComplete: () => {
       isTransitioning = false;
+      checkIsEndPoint();
     },
   });
 }

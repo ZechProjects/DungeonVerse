@@ -18,6 +18,17 @@ let wallMaterial = null;
 
 const MOVEMENT_TRANSITION = 0.15; // Adjust this value to change the transition speed
 
+/**
+ * Game variables
+ */
+let moves = 0;
+const GAME_STATES = {
+  NAVIGATION: "NAVIGATION",
+  COMBAT: "COMBAT",
+  ENDED: "ENDED",
+};
+let GAME_STATE = GAME_STATES.NAVIGATION;
+
 // Dungeon grid map (1 = wall, 0 = empty space)
 let dungeonMap = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -26,6 +37,9 @@ let dungeonMap = [
   [1, 0, 0, 0, 1, 0, 1, 1, 1, 1],
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
+
+let endX = 8;
+let endY = 2;
 
 function generateConnectedDungeonMap(width, height) {
   mapSizeX = width;
