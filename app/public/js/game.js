@@ -102,6 +102,14 @@ function init() {
 
   console.log("key", key);
 
+  // Example usage of loadGLTFModel
+  loadGLTFModel(
+    assetsPath + "3d/objects/chest.glb",
+    new THREE.Vector3(10, 1.5, 17.5),
+    6,
+    new THREE.Euler(0, Math.PI / 2, 0)
+  );
+
   // Add event listener for player controls
   document.addEventListener("keydown", handleKeyDown);
   document.addEventListener("touchstart", handleTouchStart);
@@ -187,4 +195,40 @@ function generateNewDungeon() {
   );
   // Recreate walls with textures
   createWalls();
+}
+
+function loadGLTFModel(path, position, scale, rotation) {
+  const script = document.createElement("script");
+  script.src =
+    "https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js";
+  script.onload = () => {
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      path,
+      function (gltf) {
+        const model = gltf.scene;
+
+        // Set texture parameters and remove invalid material properties
+        model.traverse((child) => {
+          if (child.isMesh) {
+            if (child.material.map) {
+              child.material.map.minFilter = THREE.LinearFilter;
+              child.material.map.magFilter = THREE.LinearFilter;
+              child.material.map.format = THREE.RGBAFormat;
+            }
+          }
+        });
+
+        model.position.copy(position);
+        model.scale.set(scale, scale, scale);
+        model.rotation.copy(rotation);
+        scene.add(model);
+      },
+      undefined,
+      function (error) {
+        console.error("An error happened while loading the model:", error);
+      }
+    );
+  };
+  document.head.appendChild(script);
 }
