@@ -36,6 +36,8 @@
         background-color: #000;
       }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="js/nft.js"></script>
   </head>
   <body class="bg-dark text-white text-center">
     <div id="nav-placeholder"></div>
@@ -70,6 +72,10 @@
         map.appendChild(cell);
       }
     </script>
+
+    <button onclick="mintNFT()">Mint NFT</button>
+    <button onclick="importNFT(prompt('Enter Token ID'))">Import NFT</button>
+    <button onclick="exportNFT(prompt('Enter Token ID'))">Export NFT</button>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>

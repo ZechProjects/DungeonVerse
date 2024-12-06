@@ -17,16 +17,22 @@
     <script src="js/particles.js"></script>
     <script src="js/controls.js"></script>
     <script src="js/game.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="js/connect.js"></script>
   </head>
   <body class="bg-dark text-white text-center" style="overflow: hidden">
     <div id="nav-placeholder"></div>
     <script>
-      fetch("nav.html")
-        .then((response) => response.text())
-        .then((data) => {
-          document.getElementById("nav-placeholder").innerHTML = data;
-        });
+      document.addEventListener("DOMContentLoaded", function() {
+        fetch("nav.html")
+          .then((response) => response.text())
+          .then((data) => {
+            document.getElementById("nav-placeholder").innerHTML = data;
+            setupConnectModal();
+          });
+      });
     </script>
+    
 
     <div
       class="container-fluid"
