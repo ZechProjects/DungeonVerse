@@ -35,7 +35,12 @@
       .cell.wall {
         background-color: #000;
       }
+      .form-section {
+        display: none;
+      }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="js/nft.js"></script>
   </head>
   <body class="bg-dark text-white text-center">
     <div id="nav-placeholder"></div>
@@ -48,6 +53,91 @@
     </script>
 
     <div id="map"></div>
+
+    <div class="container mt-4">
+      <button class="btn btn-primary" onclick="mintDungeon()">Mint Dungeon NFT</button>
+      <button class="btn btn-secondary" onclick="showForm('import')">Import NFT</button>
+      <button class="btn btn-secondary" onclick="showForm('export')">Export NFT</button>
+      <button class="btn btn-info" onclick="showDungeons()">Show NFTs</button>
+      <button class="btn btn-warning" onclick="showForm('imported')">Show Imported Items</button>
+      <button class="btn btn-success" onclick="showForm('terms-to-link')">Terms To Link NFT</button>
+      <button class="btn btn-success" onclick="showForm('link')">Link NFT</button>
+      <button class="btn btn-info" onclick="showForm('linked')">Show Linked Items</button>
+
+      <div id="import-form" class="form-section">
+        <div class="form-group">
+          <input type="text" id="dungeon-id" class="form-control" placeholder="Dungeon ID" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="nft-contract" class="form-control" placeholder="NFT Contract Address" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="token-id" class="form-control" placeholder="Token ID" />
+        </div>
+        <button class="btn btn-secondary" onclick="importNFT()">Import NFT</button>
+      </div>
+
+      <div id="export-form" class="form-section">
+        <div class="form-group">
+          <input type="text" id="dungeon-id" class="form-control" placeholder="Dungeon ID" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="nft-contract" class="form-control" placeholder="NFT Contract Address" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="token-id" class="form-control" placeholder="Token ID" />
+        </div>
+        <button class="btn btn-secondary" onclick="exportNFT()">Export NFT</button>
+      </div>
+
+      <div id="imported-form" class="form-section">
+        <div class="form-group">
+          <input type="text" id="dungeon-id" class="form-control" placeholder="Dungeon ID" />
+        </div>
+        <button class="btn btn-warning" onclick="showImportedItems()">Show Imported Items</button>
+        <div id="imported-items-list"></div>
+      </div>
+
+      <div id="terms-to-link-form" class="form-section" style="display: none;">
+        <div class="form-group">
+          <input type="text" id="terms-to-link-dungeon-id" class="form-control" placeholder="Dungeon ID" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="terms-to-link-nft-contract" class="form-control" placeholder="NFT Contract Address" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="terms-to-link-token-id" class="form-control" placeholder="Token ID" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="terms-to-link-charge" class="form-control" placeholder="Linking Charge (in wei)" />
+        </div>
+        <button class="btn btn-success" onclick="termsToLinkNFT()">Terms To Link NFT</button>
+      </div>
+
+      <div id="link-form" class="form-section" style="display: none;">
+        <div class="form-group">
+          <input type="text" id="link-dungeon-id" class="form-control" placeholder="Dungeon ID" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="link-nft-contract" class="form-control" placeholder="NFT Contract Address" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="link-token-id" class="form-control" placeholder="Token ID" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="link-charge" class="form-control" placeholder="Linking Charge (in wei)" />
+        </div>
+        <button class="btn btn-success" onclick="linkNFT()">Link NFT</button>
+      </div>
+
+      <div id="linked-form" class="form-section" style="display: none;">
+        <div class="form-group">
+          <input type="text" id="linked-dungeon-id" class="form-control" placeholder="Dungeon ID" />
+        </div>
+        <button class="btn btn-info" onclick="showLinkedItems()">Show Linked Items</button>
+        <div id="linked-items-list"></div>
+      </div>
+    </div>
 
     <div id="connect-placeholder"></div>
     <script>
@@ -69,6 +159,68 @@
         });
         map.appendChild(cell);
       }
+
+      function showForm(formId) {
+        const forms = document.querySelectorAll('.form-section');
+        forms.forEach(form => form.style.display = 'none');
+        document.getElementById(`${formId}-form`).style.display = 'block';
+      }
+
+      function importNFT() {
+        const dungeonId = document.getElementById("dungeon-id").value;
+        const nftContract = document.getElementById("nft-contract").value;
+        const tokenId = document.getElementById("token-id").value;
+        importItem(dungeonId, nftContract, tokenId);
+      }
+
+      function exportNFT() {
+        const dungeonId = document.getElementById("dungeon-id").value;
+        const nftContract = document.getElementById("nft-contract").value;
+        const tokenId = document.getElementById("token-id").value;
+        exportItem(dungeonId, nftContract, tokenId);
+      }
+
+      function showImportedItems() {
+        const dungeonId = document.getElementById("dungeon-id").value;
+        getImportedItems(dungeonId);
+      }
+
+      async function connectWallet() {
+        if (typeof window.ethereum !== 'undefined') {
+          try {
+            const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+            const walletAddress = accounts[0];
+            sessionStorage.setItem('walletAddress', walletAddress);
+            console.log(`Connected wallet: ${walletAddress}`);
+          } catch (error) {
+            console.error("Error connecting wallet:", error);
+          }
+        } else {
+          alert("Please install MetaMask!");
+        }
+      }
+
+      function termsToLinkNFT() {
+        const dungeonId = document.getElementById("terms-to-link-dungeon-id").value;
+        const nftContract = document.getElementById("terms-to-link-nft-contract").value;
+        const tokenId = document.getElementById("terms-to-link-token-id").value;
+        const charge = document.getElementById("terms-to-link-charge").value;
+        setLinkingChargeAndSignTerms(dungeonId, nftContract, tokenId, charge);
+      }
+
+      function linkNFT() {
+        const dungeonId = document.getElementById("link-dungeon-id").value;
+        const nftContract = document.getElementById("link-nft-contract").value;
+        const tokenId = document.getElementById("link-token-id").value;
+        const charge = document.getElementById("link-charge").value;
+        addLinkedAsset(dungeonId, nftContract, tokenId, charge);
+      }
+
+      function showLinkedItems() {
+        const dungeonId = document.getElementById("linked-dungeon-id").value;
+        getLinkedItems(dungeonId);
+      }
+
     </script>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
