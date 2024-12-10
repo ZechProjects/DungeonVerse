@@ -232,3 +232,19 @@ function loadGLTFModel(path, position, scale, rotation) {
   };
   document.head.appendChild(script);
 }
+
+function showGameEndModal(moves) {
+  document.getElementById("totalMoves").innerText = moves;
+  $("#gameEndModal").modal("show");
+  play_sound("win.mp3");
+  confetti({
+    particleCount: 300,
+    spread: 100,
+    origin: { y: 0.6 },
+  });
+}
+
+function restartGame() {
+  // Logic to restart the game
+  location.reload();
+}

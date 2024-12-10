@@ -14,14 +14,21 @@ function checkIsEndPoint() {
 
   if (player.x === endX && player.y === endY) {
     GAME_STATE = GAME_STATES.ENDED;
+
     showGameEndModal(moves);
   }
+}
+
+function hideInfoContainer() {
+  document.getElementById("infoContainer").style.display = "none";
 }
 
 // Handle player movement and rotation
 function handleKeyDown(event) {
   if (isTransitioning) return;
   if (GAME_STATE !== GAME_STATES.NAVIGATION) return;
+
+  hideInfoContainer(); // Hide the info container when the player starts moving
 
   const moveStep = 1; // Move one tile at a time
   const dirX = Math.round(Math.sin(player.direction));
@@ -81,13 +88,12 @@ function handleKeyDown(event) {
       checkIsEndPoint();
     },
   });
-
-  play_sound("walk1.wav");
 }
 
 function increaseMoves() {
   moves++;
   document.getElementById("moves").innerText = moves;
+  play_sound("walk.wav");
 }
 
 // Handle touch start
@@ -105,6 +111,8 @@ function handleTouchMove(event) {
   if (!touchStartX || !touchStartY || isTransitioning) {
     return;
   }
+
+  hideInfoContainer(); // Hide the info container when the player starts moving
 
   const touchEndX = event.touches[0].clientX;
   const touchEndY = event.touches[0].clientY;
