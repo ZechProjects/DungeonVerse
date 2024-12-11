@@ -32,12 +32,6 @@ function init() {
 
   setup_flicker(scene);
 
-  // Load wall texture
-  wallTexture = new THREE.TextureLoader().load(assetsPath + "img/wall2.png");
-  wallMaterial = new THREE.MeshStandardMaterial({
-    map: wallTexture,
-  });
-
   // Create dungeon walls based on the map
   createWalls();
 
@@ -47,7 +41,7 @@ function init() {
   );
   floorTexture.wrapS = THREE.RepeatWrapping;
   floorTexture.wrapT = THREE.RepeatWrapping;
-  floorTexture.repeat.set(mapSizeX, mapSizeY);
+  floorTexture.repeat.set(dungeonMap[0].length, dungeonMap.length);
   const floorMaterial = new THREE.MeshStandardMaterial({
     map: floorTexture,
   });
@@ -72,7 +66,7 @@ function init() {
   );
   ceilingTexture.wrapS = THREE.RepeatWrapping;
   ceilingTexture.wrapT = THREE.RepeatWrapping;
-  ceilingTexture.repeat.set(mapSizeX, mapSizeY);
+  ceilingTexture.repeat.set(dungeonMap[0].length, dungeonMap.length);
   const ceilingMaterial = new THREE.MeshStandardMaterial({
     map: ceilingTexture,
   });
@@ -133,7 +127,7 @@ function onWindowResize() {
 
 // Check if a position is a wall
 function isWall(x, y) {
-  const check = dungeonMap[Math.round(y)]?.[Math.round(x)] === 1;
+  const check = dungeonMap[Math.round(y)]?.[Math.round(x)]?.wall;
   if (check) {
     play_sound("bash.wav");
     shakeScreen();
@@ -149,10 +143,25 @@ function animate() {
 }
 
 function createWalls() {
+  let wallTexture = {};
+  let wallMaterial;
+
   // Create dungeon walls based on the map
   for (let row = 0; row < dungeonMap.length; row++) {
     for (let col = 0; col < dungeonMap[row].length; col++) {
-      if (dungeonMap[row][col] === 1) {
+      if (dungeonMap[row][col]?.wall) {
+        if (dungeonMap[row][col]?.texture) {
+          if (wallTexture[dungeonMap[row][col].texture] === undefined) {
+            wallTexture[dungeonMap[row][col].texture] =
+              new THREE.TextureLoader().load(
+                assetsPath + "img/" + dungeonMap[row][col].texture + ".png"
+              );
+          }
+          wallMaterial = new THREE.MeshStandardMaterial({
+            map: wallTexture[dungeonMap[row][col].texture],
+          });
+        }
+
         const wall = new THREE.Mesh(
           new THREE.BoxGeometry(wallSize, wallSize, wallSize),
           wallMaterial
