@@ -1,3 +1,11 @@
+const { Client, Storage, ID } = Appwrite;
+
+const client = new Client()
+    .setEndpoint('https://cloud.appwrite.io/v1') // Your Appwrite endpoint
+    .setProject('675d8ebc0006fd16fe8e');              // Your project ID
+
+const storage = new Storage(client);
+
 const SEPOLIA_RPC_URL = 'YOUR_ALCHEMY_SEPOLIA_RPC_URL'; // optional as wallets also have rpc url and reading from blockchain is easy
 const contractAddress = "0x4d54a7822464bb2600821c7e1c2a1f41a0cce1df"; // Replace with your contract's address
 
@@ -33,18 +41,116 @@ async function getIERC721Contract(contractAddress) {
   return null;
 } 
 
-async function mintDungeon() {
-  console.log("going to mint dungeon NFT");
-  const contract = await getContract();
-  if (contract) {
+const someMap = [
+  [
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+  ],
+  [
+    { wall: true, texture: "rockwall" },
+    { start: true },
+    {},
+    {},
+    { wall: true, texture: "rockwall" },
+    {},
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+  ],
+  [
+    { wall: true, texture: "rockwall" },
+    {},
+    { wall: true, texture: "rockwall" },
+    ,
+    {},
+    {},
+    {},
+    {},
+    {},
+    { objects: { id: "key", rotation: 0 } },
+    { wall: true, texture: "wall" },
+  ],
+  [
+    { wall: true, texture: "rockwall" },
+    {},
+    {},
+    {},
+    { wall: true, texture: "rockwall" },
+    {},
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+  ],
+  [
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+  ],
+];
+
+async function mintDungeon(map = someMap) {
+    console.log("saving the map in master db and calculating hash");
+    
     try {
-      const tx = await contract.createDungeon("ipfs://eg-afdsgfdhg");
-      await tx.wait();
-      console.log("Dungeon minted successfully!");
+        // Convert map to JSON string
+        const mapJSON = JSON.stringify(map);
+        
+        // Create a File object for Appwrite Storage
+        const mapFile = new File(
+            [mapJSON], 
+            'dungeon-map.json', 
+            { type: 'application/json' }
+        );
+        
+        // Upload the file to Appwrite Storage
+        const fileId = ID.unique();
+        const dbResponse = await storage.createFile(
+            '675d8ee60028b474b2bf',
+            fileId,
+            mapFile
+        );
+        
+        // Get the database file URL
+        const dbUrl = storage.getFileView('675d8ee60028b474b2bf', fileId);
+
+        const mapJSONHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(mapJSON)));
+
+        // Create metadata object
+        const metadata = {
+            mapHash: mapJSONHash,
+            dbUrl: dbUrl
+        };
+        
+        console.log("Map saved successfully to storage");
+        console.log("going to mint dungeon NFT with hash:", metadata);
+        
+        // Mint the NFT with the hash
+        const contract = await getContract();
+        if (contract) {
+            const tx = await contract.createDungeon(metadata);
+            await tx.wait();
+            console.log("Dungeon minted successfully!");
+        }
     } catch (error) {
-      console.error("Error minting Dungeon:", error);
+        console.error("Error saving map or minting dungeon:", error);
     }
-  }
 }
 
 async function showDungeons() {
