@@ -18,6 +18,12 @@ function setup_audio() {
 
 function play_sound(sound_file) {
   console.log("Playing sound: " + sound_file);
+
+  if (audioAssets[sound_file]) {
+    audioAssets[sound_file].play();
+    return;
+  }
+
   const listener = new THREE.AudioListener();
   camera.add(listener);
 
@@ -32,4 +38,6 @@ function play_sound(sound_file) {
     sound.setVolume(0.5);
     sound.play();
   });
+
+  audioAssets[sound_file] = sound;
 }

@@ -26,12 +26,12 @@ export function load_model(scene, model, texture) {
 
       // Handle animations
       if (object.animations.length > 0) {
+        console.log("Model has animations:", object.animations);
         const mixer = new THREE.AnimationMixer(object);
         const action = mixer.clipAction(object.animations[0]); // Play the first animation
         action.play();
 
         // Update mixer on render
-        const clock = new THREE.Clock();
         const animate = function () {
           requestAnimationFrame(animate);
           const delta = clock.getDelta();

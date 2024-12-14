@@ -99,9 +99,21 @@ function init() {
   // Example usage of loadGLTFModel
   loadGLTFModel(
     assetsPath + "3d/objects/chest.glb",
-    new THREE.Vector3(10, 1.5, 17.5),
-    6,
+    new THREE.Vector3(10, 2, 18.5),
+    8,
     new THREE.Euler(0, Math.PI / 2, 0)
+  );
+
+  var textureLoader = new THREE.TextureLoader();
+  var remap = textureLoader.load(assetsPath + "3d/enemies/skeleton_grunt.jpg");
+  var remap = new THREE.MeshStandardMaterial({
+    map: textureLoader.load(assetsPath + "3d/enemies/skeleton_grunt.jpg"),
+  });
+  let enemy = loadFBXModel(
+    assetsPath + "3d/enemies/Samba.fbx",
+    new THREE.Vector3(50, 0, 20),
+    0.05,
+    new THREE.Euler(0, (Math.PI / 4) * 3, 0)
   );
 
   // Add event listener for player controls
@@ -206,40 +218,167 @@ function generateNewDungeon() {
   createWalls();
 }
 
-function loadGLTFModel(path, position, scale, rotation) {
-  const script = document.createElement("script");
-  script.src =
-    "https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js";
-  script.onload = () => {
-    const loader = new THREE.GLTFLoader();
-    loader.load(
-      path,
-      function (gltf) {
-        const model = gltf.scene;
+function loadGLTFModel(path, position, scale, rotation, material = null) {
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    path,
+    function (gltf) {
+      const model = gltf.scene;
 
-        // Set texture parameters and remove invalid material properties
-        model.traverse((child) => {
-          if (child.isMesh) {
-            if (child.material.map) {
-              child.material.map.minFilter = THREE.LinearFilter;
-              child.material.map.magFilter = THREE.LinearFilter;
-              child.material.map.format = THREE.RGBAFormat;
-            }
+      // Set texture parameters and remove invalid material properties
+      model.traverse((child) => {
+        if (child.isMesh) {
+          const mixer = new THREE.AnimationMixer(child);
+          const animations = child.animations;
+          console.log("animations", child.name, animations);
+          if (material) {
+            child.material = material;
           }
-        });
+          if (child.material.map) {
+            child.material.map.minFilter = THREE.LinearFilter;
+            child.material.map.magFilter = THREE.LinearFilter;
+            child.material.map.format = THREE.RGBAFormat;
+          }
+        }
+      });
 
-        model.position.copy(position);
-        model.scale.set(scale, scale, scale);
-        model.rotation.copy(rotation);
-        scene.add(model);
-      },
-      undefined,
-      function (error) {
-        console.error("An error happened while loading the model:", error);
+      model.position.copy(position);
+      model.scale.set(scale, scale, scale);
+      model.rotation.copy(rotation);
+      scene.add(model);
+
+      // Set up animation mixer
+      const mixer = new THREE.AnimationMixer(model);
+      const animations = model.animations;
+      console.log("animations", animations);
+      if (animations && animations.length > 0) {
+        console.log("Model has animations:", animations);
+        const action = mixer.clipAction(animations[0]);
+        action.setLoop(THREE.LoopRepeat);
+        action.play();
       }
-    );
-  };
-  document.head.appendChild(script);
+
+      // Update the animation in the render loop
+      function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        mixer.update(delta);
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    },
+    undefined,
+    function (error) {
+      console.error("An error happened while loading the model:", error);
+    }
+  );
+}
+
+function loadFBXModel(path, position, scale, rotation, material = null) {
+  const loader = new THREE.FBXLoader();
+  loader.load(
+    path,
+    function (model) {
+      model.traverse((child) => {
+        if (child.isMesh) {
+          const mixer = new THREE.AnimationMixer(child);
+          const animations = child.animations;
+          console.log("animations", child.name, animations);
+          if (material) {
+            child.material = material;
+          }
+          if (child.material.map) {
+            child.material.map.minFilter = THREE.LinearFilter;
+            child.material.map.magFilter = THREE.LinearFilter;
+            child.material.map.format = THREE.RGBAFormat;
+          }
+        }
+      });
+
+      model.position.copy(position);
+      model.scale.set(scale, scale, scale);
+      model.rotation.copy(rotation);
+      scene.add(model);
+
+      // Set up animation mixer
+      const mixer = new THREE.AnimationMixer(model);
+      const animations = model.animations;
+      console.log("animations", animations);
+      if (animations && animations.length > 0) {
+        console.log("Model has animations:", animations);
+        const action = mixer.clipAction(animations[0]);
+        action.setLoop(THREE.LoopRepeat);
+        action.play();
+      }
+
+      // Update the animation in the render loop
+      function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        mixer.update(delta);
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    },
+    undefined,
+    function (error) {
+      console.error("An error happened while loading the model:", error);
+    }
+  );
+}
+
+function loadOBJModel(path, position, scale, rotation, material = null) {
+  console.log("Loading OBJ model:", path);
+  const loader = new THREE.OBJLoader();
+  loader.load(
+    path,
+    function (obj) {
+      obj.traverse((child) => {
+        if (child.isMesh) {
+          if (material) {
+            child.material = material;
+          }
+          if (child.material.map) {
+            child.material.map.minFilter = THREE.LinearFilter;
+            child.material.map.magFilter = THREE.LinearFilter;
+            child.material.map.format = THREE.RGBAFormat;
+          }
+        }
+      });
+
+      obj.position.copy(position);
+      obj.scale.set(scale, scale, scale);
+      obj.rotation.copy(rotation);
+      scene.add(obj);
+
+      // Set up animation mixer
+      const mixer = new THREE.AnimationMixer(obj);
+      const animations = obj.animations;
+
+      if (animations && animations.length > 0) {
+        console.log("Model has animations:", animations);
+        const action = mixer.clipAction(animations[0]);
+        action.setLoop(THREE.LoopRepeat);
+        action.play();
+      }
+
+      // Update the animation in the render loop
+      function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        mixer.update(delta);
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    },
+    undefined,
+    function (error) {
+      console.error("An error happened while loading the model:", error);
+    }
+  );
 }
 
 function showGameEndModal(moves) {

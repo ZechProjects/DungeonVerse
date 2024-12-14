@@ -6,6 +6,7 @@ const player = { x: 1, y: 1, direction: 0 }; // Initial player position and faci
 const assetsPath = "assets/";
 let touchStartX = 0;
 let touchStartY = 0;
+const clock = new THREE.Clock();
 
 let mapSizeX = 20;
 let mapSizeY = 5;
@@ -15,6 +16,8 @@ let isTransitioning = false;
 
 let wallTexture = null;
 let wallMaterial = null;
+
+let audioAssets = {};
 
 const MOVEMENT_TRANSITION = 0.15; // Adjust this value to change the transition speed
 
@@ -32,10 +35,10 @@ let GAME_STATE = GAME_STATES.NAVIGATION;
 // Dungeon grid map (1 = wall, 0 = empty space)
 let dungeonMap = [
   [
-    { wall: true, texture: "wall" },
-    { wall: true, texture: "wall2" },
-    { wall: true, texture: "wall3" },
-    { wall: true, texture: "wall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
     { wall: true, texture: "wall" },
     { wall: true, texture: "wall" },
     { wall: true, texture: "wall" },
@@ -44,11 +47,11 @@ let dungeonMap = [
     { wall: true, texture: "wall" },
   ],
   [
-    { wall: true, texture: "wall" },
+    { wall: true, texture: "rockwall" },
     { start: true },
     {},
     {},
-    { wall: true, texture: "wall" },
+    { wall: true, texture: "rockwall" },
     {},
     { wall: true, texture: "wall" },
     { wall: true, texture: "wall" },
@@ -56,9 +59,9 @@ let dungeonMap = [
     { wall: true, texture: "wall" },
   ],
   [
-    { wall: true, texture: "wall" },
+    { wall: true, texture: "rockwall" },
     {},
-    { wall: true, texture: "wall" },
+    { wall: true, texture: "rockwall" },
     ,
     {},
     {},
@@ -69,11 +72,11 @@ let dungeonMap = [
     { wall: true, texture: "wall" },
   ],
   [
-    { wall: true, texture: "wall" },
+    { wall: true, texture: "rockwall" },
     {},
     {},
     {},
-    { wall: true, texture: "wall" },
+    { wall: true, texture: "rockwall" },
     {},
     { wall: true, texture: "wall" },
     { wall: true, texture: "wall" },
@@ -81,10 +84,10 @@ let dungeonMap = [
     { wall: true, texture: "wall" },
   ],
   [
-    { wall: true, texture: "wall" },
-    { wall: true, texture: "wall" },
-    { wall: true, texture: "wall" },
-    { wall: true, texture: "wall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
     { wall: true, texture: "wall" },
     { wall: true, texture: "wall" },
     { wall: true, texture: "wall" },
