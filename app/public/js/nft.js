@@ -7,7 +7,7 @@ const client = new Client()
 const storage = new Storage(client);
 
 const SEPOLIA_RPC_URL = 'YOUR_ALCHEMY_SEPOLIA_RPC_URL'; // optional as wallets also have rpc url and reading from blockchain is easy
-const contractAddress = "0x4d54a7822464bb2600821c7e1c2a1f41a0cce1df"; // Replace with your contract's address
+const contractAddress = "0xfd510fdb2a406b985c645e74890f8d4509d8d264"; // Replace with your contract's address
 
 async function getProvider() {
   if (typeof window.ethereum !== 'undefined') {
@@ -128,7 +128,9 @@ async function mintDungeon(map = someMap) {
         );
         
         // Get the database file URL
-        const dbUrl = storage.getFileView('675d8ee60028b474b2bf', fileId);
+        const getResp = await storage.getFileView('675d8ee60028b474b2bf', dbResponse.$id);
+        const dbUrl = getResp.href;
+        console.log(dbUrl)
 
         const mapJSONHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(mapJSON)));
 
@@ -139,12 +141,12 @@ async function mintDungeon(map = someMap) {
         };
         
         console.log("Map saved successfully to storage");
-        console.log("going to mint dungeon NFT with hash:", metadata);
+        console.log("going to mint dungeon NFT");
         
         // Mint the NFT with the hash
         const contract = await getContract();
         if (contract) {
-            const tx = await contract.createDungeon(metadata);
+            const tx = await contract.createDungeon(metadata.mapHash, metadata.dbUrl);
             await tx.wait();
             console.log("Dungeon minted successfully!");
         }
@@ -164,6 +166,66 @@ async function showDungeons() {
       console.error("Error getting contract:", error);
     }
   }
+}
+
+async function fetchDungeons() {
+  const contract = await getContract();
+  if (contract) {
+    try {
+      const filter = contract.filters.DungeonCreated(null, null, null);
+      const results = await contract.queryFilter(filter);
+      console.log(results)
+      
+      // Transform the results into the format expected by the UI
+      const fetchedDungeons = await Promise.all(results.map(async (event) => {
+        const dungeonId = event.args[0];
+        const dungeonOwner = event.args[1];
+        const mapHash = event.args[2];
+        const dbUrl = event.args[3];
+
+        console.log(dbUrl)
+        console.log(mapHash)
+
+        // Fetch the map data from the dbUrl
+        try {
+          const response = await fetch(dbUrl);
+          let mapData = null
+          try {
+            mapData = await response.json();
+            console.log(195, mapData)
+          } catch {
+            return {
+              name: `Dungeon #${dungeonId}`,
+              rating: (Math.random() * 2 + 3).toFixed(1), // Random rating between 3-5
+              plays: Math.floor(Math.random() * 1000),
+              image: `assets/img/dungeons/${(dungeonId % 8) + 1}.png`, // Cycle through available images
+              difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
+              address: contractAddress,
+            };
+          }
+
+          return {
+            name: `Dungeon #${dungeonId}`,
+            rating: (Math.random() * 2 + 3).toFixed(1), // Random rating between 3-5
+            plays: Math.floor(Math.random() * 1000),
+            image: `assets/img/dungeons/${(dungeonId % 8) + 1}.png`, // Cycle through available images
+            difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
+            address: contractAddress,
+            map: mapData
+          };
+        } catch (error) {
+          console.error("Error fetching map data:", error);
+          return null;
+        }
+      }));
+
+      return fetchedDungeons.filter(dungeon => dungeon !== null);
+    } catch (error) {
+      console.error("Error fetching dungeons:", error);
+      return [];
+    }
+  }
+  return [];
 }
 
 async function importItem(dungeonId, nftContractAddress, tokenId) {

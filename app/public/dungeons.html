@@ -10,7 +10,10 @@
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
     <script src="js/data/sample_dungeons.js"></script>
+    <script src="js/nft.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -66,6 +69,17 @@
     <script>
       const itemsPerPage = 8;
       let currentPage = 1;
+      let dungeonsRes = []; // Will be populated from blockchain
+
+      // Load dungeons from blockchain
+      async function loadDungeons() {
+        dungeonsRes = await fetchDungeons();
+        displayDungeons(dungeonsRes, currentPage);
+        updatePagination(dungeonsRes);
+      }
+
+      // Call loadDungeons when the page loads
+      window.addEventListener('load', loadDungeons);
 
       function displayDungeons(filteredDungeons, page = 1) {
         const gallery = document.getElementById("dungeon-gallery");
@@ -168,10 +182,6 @@
             updatePagination(filteredDungeons);
           }
         });
-
-      // Initial display
-      displayDungeons(dungeons, currentPage);
-      updatePagination(dungeons);
     </script>
 
     <div id="connect-placeholder"></div>

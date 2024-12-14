@@ -69,7 +69,12 @@
         "name": "createDungeon",
         "inputs": [
             {
-                "name": "metadataURI",
+                "name": "mapHash",
+                "type": "string",
+                "internalType": "string"
+            },
+            {
+                "name": "dbUrl",
                 "type": "string",
                 "internalType": "string"
             }
@@ -145,9 +150,21 @@
                         "internalType": "uint256"
                     },
                     {
-                        "name": "metadataURI",
-                        "type": "string",
-                        "internalType": "string"
+                        "name": "metadata",
+                        "type": "tuple",
+                        "internalType": "struct DungeonMOW.DungeonMetadata",
+                        "components": [
+                            {
+                                "name": "mapHash",
+                                "type": "string",
+                                "internalType": "string"
+                            },
+                            {
+                                "name": "dbUrl",
+                                "type": "string",
+                                "internalType": "string"
+                            }
+                        ]
                     }
                 ]
             }
@@ -195,9 +212,21 @@
                         "internalType": "uint256"
                     },
                     {
-                        "name": "metadataURI",
-                        "type": "string",
-                        "internalType": "string"
+                        "name": "metadata",
+                        "type": "tuple",
+                        "internalType": "struct DungeonMOW.DungeonMetadata",
+                        "components": [
+                            {
+                                "name": "mapHash",
+                                "type": "string",
+                                "internalType": "string"
+                            },
+                            {
+                                "name": "dbUrl",
+                                "type": "string",
+                                "internalType": "string"
+                            }
+                        ]
                     }
                 ]
             }
@@ -216,7 +245,7 @@
         ],
         "outputs": [
             {
-                "name": "dungeon",
+                "name": "",
                 "type": "tuple",
                 "internalType": "struct DungeonMOW.Dungeon",
                 "components": [
@@ -226,9 +255,21 @@
                         "internalType": "uint256"
                     },
                     {
-                        "name": "metadataURI",
-                        "type": "string",
-                        "internalType": "string"
+                        "name": "metadata",
+                        "type": "tuple",
+                        "internalType": "struct DungeonMOW.DungeonMetadata",
+                        "components": [
+                            {
+                                "name": "mapHash",
+                                "type": "string",
+                                "internalType": "string"
+                            },
+                            {
+                                "name": "dbUrl",
+                                "type": "string",
+                                "internalType": "string"
+                            }
+                        ]
                     }
                 ]
             }
@@ -829,25 +870,6 @@
     },
     {
         "type": "event",
-        "name": "BatchMetadataUpdate",
-        "inputs": [
-            {
-                "name": "_fromTokenId",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "_toTokenId",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
         "name": "DungeonCreated",
         "inputs": [
             {
@@ -863,7 +885,13 @@
                 "internalType": "address"
             },
             {
-                "name": "metadataURI",
+                "name": "mapHash",
+                "type": "string",
+                "indexed": false,
+                "internalType": "string"
+            },
+            {
+                "name": "dbUrl",
                 "type": "string",
                 "indexed": false,
                 "internalType": "string"
@@ -978,19 +1006,6 @@
                 "name": "tokenId",
                 "type": "uint256",
                 "indexed": true,
-                "internalType": "uint256"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "MetadataUpdate",
-        "inputs": [
-            {
-                "name": "_tokenId",
-                "type": "uint256",
-                "indexed": false,
                 "internalType": "uint256"
             }
         ],
