@@ -183,6 +183,7 @@ async function fetchDungeons() {
         const mapHash = event.args[2];
         const dbUrl = event.args[3];
 
+        console.log(dungeonId.toString())
         console.log(dbUrl)
         console.log(mapHash)
 
@@ -193,25 +194,30 @@ async function fetchDungeons() {
           try {
             mapData = await response.json();
             console.log(195, mapData)
+            if (Object.keys(mapData).length === 0 || mapData.code === 400 ) { // TODO: check for proper map format instead
+              throw new Error('Invalid map data');
+            }
           } catch {
             return {
-              name: `Dungeon #${dungeonId}`,
+              name: `Dungeon special #${dungeonId.toString()}`,
               rating: (Math.random() * 2 + 3).toFixed(1), // Random rating between 3-5
               plays: Math.floor(Math.random() * 1000),
-              image: `assets/img/dungeons/${(dungeonId % 8) + 1}.png`, // Cycle through available images
+              image: `assets/img/dungeons/${(dungeonId.toString() % 8) + 1}.png`, // Cycle through available images
               difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
               address: contractAddress,
+              isVisible: false
             };
           }
 
           return {
-            name: `Dungeon #${dungeonId}`,
+            name: `Dungeon special #${dungeonId.toString()}`,
             rating: (Math.random() * 2 + 3).toFixed(1), // Random rating between 3-5
             plays: Math.floor(Math.random() * 1000),
-            image: `assets/img/dungeons/${(dungeonId % 8) + 1}.png`, // Cycle through available images
+            image: `assets/img/dungeons/${(dungeonId.toString() % 8) + 1}.png`, // Cycle through available images
             difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
             address: contractAddress,
-            map: mapData
+            map: mapData,
+            isVisible:  true
           };
         } catch (error) {
           console.error("Error fetching map data:", error);

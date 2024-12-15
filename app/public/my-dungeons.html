@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dungeons</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
+    <script src="js/nft.js"></script>
+    <script src="js/connect.js"></script>
+    <script>
+        const asyncFunc = async () => {
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            return accounts;
+        }
+        asyncFunc().then(console.log);
+    </script>
+</head>
+<body class="bg-dark text-white text-center">
+    <div id="nav-placeholder"></div>
+
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">My Dungeons</h1>
+        <div id="dungeons-container" class="row">
+            <!-- Dungeons will be loaded here -->
+        </div>
+    </div>
+
+    <div id="connect-placeholder"></div>
+
+    <script>
+        // Load navigation and connect modal
+        fetch("nav.html")
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("nav-placeholder").innerHTML = data;
+            });
+
+        fetch("connect.html")
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("connect-placeholder").innerHTML = data;
+            });
+
+        async function loadMyDungeons() {
+            const dungeons = await fetchDungeons();
+            const container = document.getElementById('dungeons-container');
+            
+            dungeons.forEach(dungeon => {
+                const dungeonCard = `
+                    <div class="col-md-4 mb-4">
+                        <div class="card bg-secondary">
+                            <img src="${dungeon.image}" class="card-img-top" alt="Dungeon">
+                            <div class="card-body">
+                                <h5 class="card-title">${dungeon.name}</h5>
+                                <p class="card-text">
+                                    Rating: ${dungeon.rating}<br>
+                                    Plays: ${dungeon.plays}<br>
+                                    Difficulty: ${dungeon.difficulty}
+                                </p>
+                                <button class="btn btn-primary" onclick="playDungeon('${dungeon.address}')">Play</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += dungeonCard;
+            });
+        }
+
+        // Check if wallet is connected and load dungeons
+        window.addEventListener('load', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    loadMyDungeons();
+                } else {
+                    document.getElementById('dungeons-container').innerHTML = `
+                        <div class="col-12 text-center">
+                            <h3>Please connect your wallet to view your dungeons</h3>
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#connectModal">
+                                Connect Wallet
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        function playDungeon(address) {
+            window.location.href = `/?dungeon=${address}`;
+        }
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
