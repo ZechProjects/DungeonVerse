@@ -108,7 +108,7 @@ const someMap = [
 ];
 
 async function mintDungeon(map = someMap) {
-    console.log("saving the map in master db and calculating hash");
+    showToast("Saving map in master DB and calculating hash", "info");
     
     try {
         // Convert map to JSON string
@@ -132,7 +132,7 @@ async function mintDungeon(map = someMap) {
         // Get the database file URL
         const getResp = await storage.getFileView('675d8ee60028b474b2bf', dbResponse.$id);
         const dbUrl = getResp.href;
-        console.log(dbUrl)
+        showToast(`Database URL: ${dbUrl}`, "info");
 
         const mapJSONHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(mapJSON)));
 
@@ -150,7 +150,7 @@ async function mintDungeon(map = someMap) {
         if (contract) {
             const tx = await contract.createDungeon(metadata.mapHash, metadata.dbUrl);
             await tx.wait();
-            console.log("Dungeon minted successfully!");
+            showToast("Dungeon minted successfully!", "success");
         }
     } catch (error) {
         console.error("Error saving map or minting dungeon:", error);
