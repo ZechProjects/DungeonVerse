@@ -28,6 +28,12 @@ function handleKeyDown(event) {
   switch (event.key) {
     case "ArrowUp": // Move forward
     case "w": // Move forward
+      if (isEnemy(player.x + dirX, player.y + dirZ)) {
+        break;
+      }
+      if (isChest(player.x + dirX, player.y + dirZ)) {
+        break;
+      }
       if (!isWall(player.x + dirX, player.y + dirZ)) {
         newX += dirX;
         newY += dirZ;
