@@ -1,5 +1,13 @@
+const { Client, Storage, ID } = Appwrite;
+
+const client = new Client()
+    .setEndpoint('https://cloud.appwrite.io/v1') // Your Appwrite endpoint
+    .setProject('675d8ebc0006fd16fe8e');              // Your project ID
+
+const storage = new Storage(client);
+
 const SEPOLIA_RPC_URL = 'YOUR_ALCHEMY_SEPOLIA_RPC_URL'; // optional as wallets also have rpc url and reading from blockchain is easy
-const contractAddress = "0x4d54a7822464bb2600821c7e1c2a1f41a0cce1df"; // Replace with your contract's address
+const contractAddress = "0xfd510fdb2a406b985c645e74890f8d4509d8d264"; // Replace with your contract's address
 
 async function getProvider() {
   if (typeof window.ethereum !== 'undefined') {
@@ -33,18 +41,118 @@ async function getIERC721Contract(contractAddress) {
   return null;
 } 
 
-async function mintDungeon() {
-  console.log("going to mint dungeon NFT");
-  const contract = await getContract();
-  if (contract) {
+const someMap = [
+  [
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+  ],
+  [
+    { wall: true, texture: "rockwall" },
+    { start: true },
+    {},
+    {},
+    { wall: true, texture: "rockwall" },
+    {},
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+  ],
+  [
+    { wall: true, texture: "rockwall" },
+    {},
+    { wall: true, texture: "rockwall" },
+    ,
+    {},
+    {},
+    {},
+    {},
+    {},
+    { objects: { id: "key", rotation: 0 } },
+    { wall: true, texture: "wall" },
+  ],
+  [
+    { wall: true, texture: "rockwall" },
+    {},
+    {},
+    {},
+    { wall: true, texture: "rockwall" },
+    {},
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+  ],
+  [
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "rockwall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+    { wall: true, texture: "wall" },
+  ],
+];
+
+async function mintDungeon(map = someMap) {
+    console.log("saving the map in master db and calculating hash");
+    
     try {
-      const tx = await contract.createDungeon("ipfs://eg-afdsgfdhg");
-      await tx.wait();
-      console.log("Dungeon minted successfully!");
+        // Convert map to JSON string
+        const mapJSON = JSON.stringify(map);
+        
+        // Create a File object for Appwrite Storage
+        const mapFile = new File(
+            [mapJSON], 
+            'dungeon-map.json', 
+            { type: 'application/json' }
+        );
+        
+        // Upload the file to Appwrite Storage
+        const fileId = ID.unique();
+        const dbResponse = await storage.createFile(
+            '675d8ee60028b474b2bf',
+            fileId,
+            mapFile
+        );
+        
+        // Get the database file URL
+        const getResp = await storage.getFileView('675d8ee60028b474b2bf', dbResponse.$id);
+        const dbUrl = getResp.href;
+        console.log(dbUrl)
+
+        const mapJSONHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(mapJSON)));
+
+        // Create metadata object
+        const metadata = {
+            mapHash: mapJSONHash,
+            dbUrl: dbUrl
+        };
+        
+        console.log("Map saved successfully to storage");
+        console.log("going to mint dungeon NFT");
+        
+        // Mint the NFT with the hash
+        const contract = await getContract();
+        if (contract) {
+            const tx = await contract.createDungeon(metadata.mapHash, metadata.dbUrl);
+            await tx.wait();
+            console.log("Dungeon minted successfully!");
+        }
     } catch (error) {
-      console.error("Error minting Dungeon:", error);
+        console.error("Error saving map or minting dungeon:", error);
     }
-  }
 }
 
 async function showDungeons() {
@@ -58,6 +166,66 @@ async function showDungeons() {
       console.error("Error getting contract:", error);
     }
   }
+}
+
+async function fetchDungeons() {
+  const contract = await getContract();
+  if (contract) {
+    try {
+      const filter = contract.filters.DungeonCreated(null, null, null);
+      const results = await contract.queryFilter(filter);
+      console.log(results)
+      
+      // Transform the results into the format expected by the UI
+      const fetchedDungeons = await Promise.all(results.map(async (event) => {
+        const dungeonId = event.args[0];
+        const dungeonOwner = event.args[1];
+        const mapHash = event.args[2];
+        const dbUrl = event.args[3];
+
+        console.log(dbUrl)
+        console.log(mapHash)
+
+        // Fetch the map data from the dbUrl
+        try {
+          const response = await fetch(dbUrl);
+          let mapData = null
+          try {
+            mapData = await response.json();
+            console.log(195, mapData)
+          } catch {
+            return {
+              name: `Dungeon #${dungeonId}`,
+              rating: (Math.random() * 2 + 3).toFixed(1), // Random rating between 3-5
+              plays: Math.floor(Math.random() * 1000),
+              image: `assets/img/dungeons/${(dungeonId % 8) + 1}.png`, // Cycle through available images
+              difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
+              address: contractAddress,
+            };
+          }
+
+          return {
+            name: `Dungeon #${dungeonId}`,
+            rating: (Math.random() * 2 + 3).toFixed(1), // Random rating between 3-5
+            plays: Math.floor(Math.random() * 1000),
+            image: `assets/img/dungeons/${(dungeonId % 8) + 1}.png`, // Cycle through available images
+            difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
+            address: contractAddress,
+            map: mapData
+          };
+        } catch (error) {
+          console.error("Error fetching map data:", error);
+          return null;
+        }
+      }));
+
+      return fetchedDungeons.filter(dungeon => dungeon !== null);
+    } catch (error) {
+      console.error("Error fetching dungeons:", error);
+      return [];
+    }
+  }
+  return [];
 }
 
 async function importItem(dungeonId, nftContractAddress, tokenId) {
