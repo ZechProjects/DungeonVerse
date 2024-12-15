@@ -7,8 +7,8 @@ const client = new Client()
 const storage = new Storage(client);
 
 const SEPOLIA_RPC_URL = 'YOUR_ALCHEMY_SEPOLIA_RPC_URL'; // optional as wallets also have rpc url and reading from blockchain is easy
-const contractAddress = "0xb31689fcd9a74f57854f3ba703039239ff60529a"; // sepolia contract's address
-// const contractAddress = "0xd2177601a16827569907f508de356849d935b089"; // shape sepolia contract's address
+const contractAddress = "0x4ec50c554d55fb5710460490d65bb1f42d01df26"; // sepolia contract's address
+// const contractAddress = "0xb0a924c6e02562fd3da744b8dc9a5acdf2f31dd3"; // shape sepolia contract's address
 
 async function getProvider() {
   if (typeof window.ethereum !== 'undefined') {
@@ -35,7 +35,8 @@ async function getIERC721Contract(contractAddress) {
   const provider = await getProvider();
   if (provider) {
     const signer = await provider.getSigner();
-    const response = await fetch('contracts/IERC721.json'); // Adjust the path as needed
+    // const response = await fetch('contracts/IERC721.json'); // Adjust the path as needed
+    const response = await fetch('contracts/ERC721URIStorage.json'); // Adjust the path as needed
     const contractABI = await response.json();
     return new ethers.Contract(contractAddress, contractABI, signer);
   }
@@ -107,7 +108,7 @@ const someMap = [
 ];
 
 async function mintDungeon(map = someMap) {
-    console.log("saving the map in master db and calculating hash");
+    showToast("Saving map in master DB and calculating hash", "info");
     
     try {
         // Convert map to JSON string
@@ -131,7 +132,7 @@ async function mintDungeon(map = someMap) {
         // Get the database file URL
         const getResp = await storage.getFileView('675d8ee60028b474b2bf', dbResponse.$id);
         const dbUrl = getResp.href;
-        console.log(dbUrl)
+        showToast(`Database URL: ${dbUrl}`, "info");
 
         const mapJSONHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(mapJSON)));
 
@@ -149,7 +150,7 @@ async function mintDungeon(map = someMap) {
         if (contract) {
             const tx = await contract.createDungeon(metadata.mapHash, metadata.dbUrl);
             await tx.wait();
-            console.log("Dungeon minted successfully!");
+            showToast("Dungeon minted successfully!", "success");
         }
     } catch (error) {
         console.error("Error saving map or minting dungeon:", error);
@@ -359,6 +360,47 @@ async function burnDungeon(tokenId) {
             console.error("Error burning Dungeon:", error);
             throw error;
         }
+    }
+}
+
+async function listDungeonForSale(dungeonId, price) {
+    const contract = await getContract();
+    if (contract) {
+        const tx = await contract.listDungeonForSale(dungeonId, price);
+        await tx.wait();
+    }
+}
+
+async function cancelDungeonListing(dungeonId) {
+    const contract = await getContract();
+    if (contract) {
+        const tx = await contract.cancelDungeonListing(dungeonId);
+        await tx.wait();
+    }
+}
+
+async function isDungeonListed(dungeonId) {
+    const contract = await getContract();
+    if (contract) {
+        const price = await contract.getDungeonListingPrice(dungeonId);
+        return price > 0;
+    }
+    return false;
+}
+
+async function getDungeonListingPrice(dungeonId) {
+    const contract = await getContract();
+    if (contract) {
+        return await contract.getDungeonListingPrice(dungeonId);
+    }
+    return 0;
+}
+
+async function purchaseDungeonFromListing(dungeonId, price) {
+    const contract = await getContract();
+    if (contract) {
+        const tx = await contract.purchaseDungeon(dungeonId, { value: price });
+        await tx.wait();
     }
 }
 

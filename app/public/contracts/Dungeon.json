@@ -66,6 +66,19 @@
     },
     {
         "type": "function",
+        "name": "cancelDungeonListing",
+        "inputs": [
+            {
+                "name": "dungeonId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
         "name": "createDungeon",
         "inputs": [
             {
@@ -291,6 +304,25 @@
     },
     {
         "type": "function",
+        "name": "getDungeonListingPrice",
+        "inputs": [
+            {
+                "name": "dungeonId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
         "name": "getLinkedAssets",
         "inputs": [
             {
@@ -426,6 +458,24 @@
             }
         ],
         "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "listDungeonForSale",
+        "inputs": [
+            {
+                "name": "dungeonId",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "price",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
     },
     {
         "type": "function",
@@ -631,6 +681,19 @@
             }
         ],
         "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "purchaseDungeon",
+        "inputs": [
+            {
+                "name": "dungeonId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "payable"
     },
     {
         "type": "function",
@@ -914,6 +977,56 @@
     },
     {
         "type": "event",
+        "name": "DungeonListed",
+        "inputs": [
+            {
+                "name": "dungeonId",
+                "type": "uint256",
+                "indexed": true,
+                "internalType": "uint256"
+            },
+            {
+                "name": "price",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "DungeonSold",
+        "inputs": [
+            {
+                "name": "dungeonId",
+                "type": "uint256",
+                "indexed": true,
+                "internalType": "uint256"
+            },
+            {
+                "name": "seller",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "buyer",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "price",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
         "name": "ItemExported",
         "inputs": [
             {
@@ -1056,7 +1169,17 @@
     },
     {
         "type": "error",
+        "name": "DungeonAlreadyListed",
+        "inputs": []
+    },
+    {
+        "type": "error",
         "name": "DungeonDoesNotExist",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "DungeonNotListed",
         "inputs": []
     },
     {
@@ -1180,6 +1303,11 @@
     {
         "type": "error",
         "name": "NotItemOwner",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "PriceMustBeGreaterThanZero",
         "inputs": []
     },
     {

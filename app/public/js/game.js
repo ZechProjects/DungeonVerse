@@ -124,6 +124,42 @@ function init() {
   animate();
 
   startGame();
+
+  // Add at the top with other global variables
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+
+  // Add this function to handle NFT wall clicks
+  function onMouseClick(event) {
+    // Calculate mouse position in normalized device coordinates
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Update the picking ray with the camera and mouse position
+    raycaster.setFromCamera(mouse, camera);
+
+    // Calculate objects intersecting the picking ray
+    const intersects = raycaster.intersectObjects(scene.children);
+
+    for (let i = 0; i < intersects.length; i++) {
+      // Check if the intersected object is a wall with NFT data
+      if (intersects[i].object.userData.nft) {
+        const nftData = intersects[i].object.userData.nft;
+        // Show NFT information modal or tooltip
+        showNFTInfo(nftData);
+        break;
+      }
+    }
+  }
+
+  // Add this function to show NFT information
+  function showNFTInfo(nftData) {
+    // You can create a modal or tooltip to show NFT information
+    alert(`NFT: ${nftData.name}\nContract: ${nftData.contractAddress}\nToken ID: ${nftData.tokenId}`);
+  }
+
+  // Add the click event listener in init()
+  document.addEventListener('click', onMouseClick);
 }
 
 // Update the light position and direction to follow the player
@@ -248,24 +284,38 @@ function placeWalls() {
   for (let row = 0; row < dungeonMap.length; row++) {
     for (let col = 0; col < dungeonMap[row].length; col++) {
       if (dungeonMap[row][col]?.wall) {
-        if (dungeonMap[row][col]?.texture) {
+        if (dungeonMap[row][col]?.nft) {
+          // Create NFT texture
+          const nftTexture = new THREE.TextureLoader().load(dungeonMap[row][col].nft.image);
+          wallMaterial = new THREE.MeshStandardMaterial({ map: nftTexture });
+          
+          // Add interaction data to the wall
+          const wall = new THREE.Mesh(
+            new THREE.BoxGeometry(wallSize, wallSize, wallSize),
+            wallMaterial
+          );
+          wall.position.set(col * wallSize, wallSize / 2, row * wallSize);
+          wall.userData.nft = dungeonMap[row][col].nft; // Store NFT data for interaction
+          scene.add(wall);
+          
+        } else if (dungeonMap[row][col]?.texture) {
+          // Regular textured wall
           if (wallTexture[dungeonMap[row][col].texture] === undefined) {
-            wallTexture[dungeonMap[row][col].texture] =
-              new THREE.TextureLoader().load(
-                assetsPath + "img/" + dungeonMap[row][col].texture + ".png"
-              );
+            wallTexture[dungeonMap[row][col].texture] = new THREE.TextureLoader().load(
+              assetsPath + "img/" + dungeonMap[row][col].texture + ".png"
+            );
           }
           wallMaterial = new THREE.MeshStandardMaterial({
             map: wallTexture[dungeonMap[row][col].texture],
           });
+          
+          const wall = new THREE.Mesh(
+            new THREE.BoxGeometry(wallSize, wallSize, wallSize),
+            wallMaterial
+          );
+          wall.position.set(col * wallSize, wallSize / 2, row * wallSize);
+          scene.add(wall);
         }
-
-        const wall = new THREE.Mesh(
-          new THREE.BoxGeometry(wallSize, wallSize, wallSize),
-          wallMaterial
-        );
-        wall.position.set(col * wallSize, wallSize / 2, row * wallSize);
-        scene.add(wall);
       }
     }
   }
@@ -471,4 +521,23 @@ function showGameEndModal(moves) {
 function restartGame() {
   // Logic to restart the game
   location.reload();
+}
+
+function showToast(message, type = 'info') {
+  const backgroundColor = {
+    info: 'linear-gradient(to right, #00b09b, #96c93d)',
+    error: 'linear-gradient(to right, #ff5f6d, #ffc371)',
+    warning: 'linear-gradient(to right, #f7b733, #fc4a1a)',
+    success: 'linear-gradient(to right, #00b09b, #96c93d)'
+  };
+
+  Toastify({
+    text: message,
+    duration: 3000,
+    gravity: "bottom",
+    position: "right",
+    style: {
+      background: backgroundColor[type]
+    }
+  }).showToast();
 }

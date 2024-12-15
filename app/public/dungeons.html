@@ -10,8 +10,11 @@
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
+    <script src="/app/public/js/utils/toast.js"></script>
     <script src="js/data/sample_dungeons.js"></script>
     <script src="js/nft.js"></script>
     <style>
@@ -89,7 +92,7 @@
         const end = start + itemsPerPage;
         const paginatedDungeons = filteredDungeons.slice(start, end);
 
-        paginatedDungeons.forEach((dungeon) => {
+        paginatedDungeons.forEach(async (dungeon) => {
           const dungeonCard = `
             <div class="col-md-3 mb-4">
               <div class="card">
@@ -101,8 +104,15 @@
                       Plays: ${dungeon.plays}<br>
                       Rating: ${dungeon.rating} ⭐<br>
                       🔍 <a href="https://shapescan.xyz/address/${dungeon.address}" target="_blank">${dungeon.address}</a>
+                      ${await isDungeonListed(dungeon.id) ? 
+                        `<br>💰 Price: ${ethers.formatEther(await getDungeonListingPrice(dungeon.id))} ETH` : 
+                        ''
+                      }
                     </p>
-                    <button class="btn btn-primary" onclick="playDungeon(${JSON.stringify(dungeon).replace(/"/g, '&quot;')})">Play</button>
+                    ${await isDungeonListed(dungeon.id) ? 
+                      `<button class="btn btn-success" onclick="purchaseDungeon('${dungeon.id}')">Purchase</button>` :
+                      `<button class="btn btn-primary" onclick="playDungeon(${JSON.stringify(dungeon).replace(/"/g, '&quot;')})">Play</button>`
+                    }
                 </div>
               </div>
             </div>
@@ -198,11 +208,62 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="/app/public/js/connect.js"></script>
     <script>
-    function playDungeon(dungeon) {
-        // Store the dungeon data in localStorage
-        localStorage.setItem('currentDungeon', JSON.stringify(dungeon));
-        // Redirect to index.html
-        window.location.href = 'index.html';
+    async function playDungeon(dungeon) {
+        try {
+            // Get linked NFTs for this dungeon
+            const linkedItems = await getLinkedItems(dungeon.id);
+            const linkedNFTsWithMetadata = await Promise.all(linkedItems.map(async item => {
+                try {
+                    const nftContract = await getIERC721Contract(item.nftContract);
+                    const tokenURI = await nftContract.tokenURI(item.tokenId);
+                    const metadataURL = tokenURI.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+                    const response = await fetch(metadataURL);
+                    const metadata = await response.json();
+                    const imageUrl = metadata.image ? 
+                        metadata.image.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/') : 
+                        'assets/img/placeholder-image.jpg';
+                    
+                    return {
+                        contractAddress: item["0"],
+                        tokenId: item["1"].toString(),
+                        image: imageUrl,
+                        name: metadata.name || `NFT #${item.tokenId}`
+                    };
+                } catch (error) {
+                    console.error(`Error fetching metadata for token ${item.tokenId}:`, error);
+                    return null;
+                }
+            }));
+
+            // Filter out any failed metadata fetches
+            const validLinkedNFTs = linkedNFTsWithMetadata.filter(nft => nft !== null);
+            
+            // Add linked NFTs to dungeon data
+            dungeon.linkedNFTs = validLinkedNFTs;
+            
+            // Store the dungeon data in localStorage
+            localStorage.setItem('currentDungeon', JSON.stringify(dungeon));
+            // Redirect to index.html
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error('Error preparing dungeon:', error);
+            alert('Failed to load dungeon. Please try again.');
+        }
+    }
+    </script>
+    <script>
+    async function purchaseDungeon(dungeonId) {
+        try {
+            const price = await getDungeonListingPrice(dungeonId);
+            if (confirm(`Are you sure you want to purchase this dungeon for ${ethers.formatEther(price)} ETH?`)) {
+                await purchaseDungeonFromListing(dungeonId, price);
+                alert('Dungeon purchased successfully!');
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Error purchasing dungeon:', error);
+            alert('Failed to purchase dungeon. Please try again.');
+        }
     }
     </script>
   </body>
