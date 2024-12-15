@@ -66,7 +66,7 @@ async function viewMyDungeons() {
     if (typeof window.ethereum !== 'undefined') {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
-            window.location.href = '/app/public/my-dungeons.html';
+
         } else {
             $('#connectModal').modal('show');
         }
