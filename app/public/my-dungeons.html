@@ -37,19 +37,19 @@
             padding: 10px;
             border-radius: 4px;
             margin-top: 5px;
-            max-height: 100px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
         .linked-nft-item {
             background-color: rgba(255, 255, 255, 0.1);
-            padding: 5px;
+            padding: 10px;
             margin-bottom: 5px;
             border-radius: 3px;
         }
 
-        .linked-nft-item:last-child {
-            margin-bottom: 0;
+        .linked-nft-item img {
+            background-color: rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -304,10 +304,58 @@
                     return;
                 }
 
-                const nftList = linkedItems.map(item => `
+                // Create array of promises for fetching NFT metadata
+                const metadataPromises = linkedItems.map(async item => {
+                    try {
+                        const nftContract = await getIERC721Contract(item.nftContract);
+                        const tokenURI = await nftContract.tokenURI(item.tokenId);
+                        
+                        // Handle both IPFS and HTTP URIs
+                        const metadataURL = tokenURI.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+                        const response = await fetch(metadataURL);
+                        console.log(response);
+                        const metadata = await response.json();
+                        console.log(metadata);
+                        
+                        // Handle both IPFS and HTTP image URLs
+                        const imageUrl = metadata.image ? 
+                            metadata.image.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/') : 
+                            'assets/img/placeholder-image.jpg';
+                        
+                        console.log(imageUrl)
+                        
+                        return {
+                            ...item,
+                            name: metadata.name || `NFT #${item.tokenId.toString()}`,
+                            image: imageUrl
+                        };
+                    } catch (error) {
+                        console.error(`Error fetching metadata for token ${item.tokenId}:`, error);
+                        return {
+                            ...item,
+                            name: `NFT #${item.tokenId}`,
+                            image: 'assets/img/placeholder-image.jpg'
+                        };
+                    }
+                });
+
+                // Wait for all metadata to be fetched
+                const nftsWithMetadata = await Promise.all(metadataPromises);
+
+                console.log(nftsWithMetadata);
+
+                const nftList = nftsWithMetadata.map(item => `
                     <div class="linked-nft-item">
-                        <small>Contract: ${shortenAddress(item.nftContract)}</small><br>
-                        <small>Token ID: ${item.tokenId}</small>
+                        <div class="d-flex align-items-center">
+                            <img src="${item.image}" 
+                                 alt="${item.name}" 
+                                 style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; border-radius: 5px;">
+                            <div>
+                                <small class="d-block">${item.name}</small>
+                                <small class="d-block">Contract: ${(item["0"])}</small>
+                                <small class="d-block">Token ID: ${item["1"].toString()}</small>
+                            </div>
+                        </div>
                     </div>
                 `).join('');
 
@@ -321,7 +369,7 @@
 
         // Helper function to shorten addresses
         function shortenAddress(address) {
-            return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+            return `${address?.substring(0, 6)}...${address?.substring(address.length - 4)}`;
         }
     </script>
 

@@ -35,7 +35,8 @@ async function getIERC721Contract(contractAddress) {
   const provider = await getProvider();
   if (provider) {
     const signer = await provider.getSigner();
-    const response = await fetch('contracts/IERC721.json'); // Adjust the path as needed
+    // const response = await fetch('contracts/IERC721.json'); // Adjust the path as needed
+    const response = await fetch('contracts/ERC721URIStorage.json'); // Adjust the path as needed
     const contractABI = await response.json();
     return new ethers.Contract(contractAddress, contractABI, signer);
   }
