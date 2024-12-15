@@ -158,11 +158,11 @@ function handleTouchMove(event) {
     if (diffX > 0) {
       // Swipe left
       newDirection -= Math.PI / 2;
-      updateDirection("left");
+      updateDirection("right");
     } else {
       // Swipe right
       newDirection += Math.PI / 2;
-      updateDirection("right");
+      updateDirection("left");
     }
   } else {
     // Vertical swipe
@@ -170,7 +170,11 @@ function handleTouchMove(event) {
     const dirZ = Math.round(Math.cos(player.direction));
     if (diffY > 0) {
       // Swipe up
-      if (!isWall(player.x + dirX, player.y + dirZ)) {
+      if (isEnemy(player.x + dirX, player.y + dirZ)) {
+        // do nothing
+      } else if (isChest(player.x + dirX, player.y + dirZ)) {
+        // do nothing
+      } else if (!isWall(player.x + dirX, player.y + dirZ)) {
         newX += dirX;
         newY += dirZ;
         increaseMoves();

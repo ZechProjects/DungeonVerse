@@ -252,11 +252,11 @@ function isEnemy(x, y) {
 
     confetti({
       particleCount: 100,
-      spread: 500,
+      spread: 200,
       origin: { y: 0.6 },
       colors: ["#FF0000", "#8B0000"], // Red, Dark Red
       shapes: ["circle"],
-      scalar: 1.9,
+      scalar: 1.4,
       gravity: 1.5,
       ticks: 50,
     });
