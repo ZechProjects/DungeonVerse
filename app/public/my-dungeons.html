@@ -101,6 +101,31 @@
         </div>
     </div>
 
+    <div class="modal fade" id="listDungeonModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">List Dungeon for Sale</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="listDungeonForm">
+                        <div class="form-group">
+                            <label>Price (ETH):</label>
+                            <input type="number" class="form-control" id="listingPrice" step="0.001" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="handleListDungeon()">List Dungeon</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Load navigation and connect modal
         fetch("nav.html")
@@ -120,7 +145,7 @@
             const container = document.getElementById('dungeons-container');
             container.innerHTML = ''; // Clear existing content
             
-            dungeons.forEach(dungeon => {
+            dungeons.forEach(async dungeon => {
                 const isMapValid = isValidDungeonMap(dungeon.map);
                 const dungeonCard = `
                     <div class="col-md-4 mb-4">
@@ -152,6 +177,16 @@
                                             onclick="openLinkNFTModal('${dungeon.id}')">
                                         Link NFT
                                     </button>
+                                    ${await isDungeonListed(dungeon.id) ? 
+                                        `<button class="btn btn-warning" 
+                                                onclick="handleCancelDungeonListing('${dungeon.id}')">
+                                            Cancel Listing
+                                        </button>` :
+                                        `<button class="btn btn-success" 
+                                                onclick="openListDungeonModal('${dungeon.id}')">
+                                            List for Sale
+                                        </button>`
+                                    }
                                     <button class="btn btn-danger" 
                                             onclick="deleteDungeon('${dungeon.id}')">
                                         Delete
@@ -402,6 +437,40 @@
         // Helper function to shorten addresses
         function shortenAddress(address) {
             return `${address?.substring(0, 6)}...${address?.substring(address.length - 4)}`;
+        }
+
+        // Add these functions to handle listing functionality
+        let currentListingDungeonId = null;
+
+        function openListDungeonModal(dungeonId) {
+            currentListingDungeonId = dungeonId;
+            $('#listDungeonModal').modal('show');
+        }
+
+        async function handleListDungeon() {
+            const price = ethers.parseEther(document.getElementById('listingPrice').value);
+            try {
+                await listDungeonForSale(currentListingDungeonId, price);
+                alert('Dungeon listed successfully!');
+                $('#listDungeonModal').modal('hide');
+                location.reload();
+            } catch (error) {
+                console.error('Error listing dungeon:', error);
+                alert('Failed to list dungeon. Please try again.');
+            }
+        }
+
+        async function handleCancelDungeonListing(dungeonId) {
+            if (confirm('Are you sure you want to cancel this listing?')) {
+                console.log("here....")
+                try {
+                    await cancelDungeonListing(dungeonId);
+                    location.reload();
+                } catch (error) {
+                    console.error('Error canceling listing:', error);
+                    alert('Failed to cancel listing. Please try again.');
+                }
+            }
         }
     </script>
 

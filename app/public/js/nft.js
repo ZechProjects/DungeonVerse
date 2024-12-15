@@ -7,8 +7,8 @@ const client = new Client()
 const storage = new Storage(client);
 
 const SEPOLIA_RPC_URL = 'YOUR_ALCHEMY_SEPOLIA_RPC_URL'; // optional as wallets also have rpc url and reading from blockchain is easy
-const contractAddress = "0xb31689fcd9a74f57854f3ba703039239ff60529a"; // sepolia contract's address
-// const contractAddress = "0xd2177601a16827569907f508de356849d935b089"; // shape sepolia contract's address
+const contractAddress = "0x4ec50c554d55fb5710460490d65bb1f42d01df26"; // sepolia contract's address
+// const contractAddress = "0xb0a924c6e02562fd3da744b8dc9a5acdf2f31dd3"; // shape sepolia contract's address
 
 async function getProvider() {
   if (typeof window.ethereum !== 'undefined') {
@@ -360,6 +360,47 @@ async function burnDungeon(tokenId) {
             console.error("Error burning Dungeon:", error);
             throw error;
         }
+    }
+}
+
+async function listDungeonForSale(dungeonId, price) {
+    const contract = await getContract();
+    if (contract) {
+        const tx = await contract.listDungeonForSale(dungeonId, price);
+        await tx.wait();
+    }
+}
+
+async function cancelDungeonListing(dungeonId) {
+    const contract = await getContract();
+    if (contract) {
+        const tx = await contract.cancelDungeonListing(dungeonId);
+        await tx.wait();
+    }
+}
+
+async function isDungeonListed(dungeonId) {
+    const contract = await getContract();
+    if (contract) {
+        const price = await contract.getDungeonListingPrice(dungeonId);
+        return price > 0;
+    }
+    return false;
+}
+
+async function getDungeonListingPrice(dungeonId) {
+    const contract = await getContract();
+    if (contract) {
+        return await contract.getDungeonListingPrice(dungeonId);
+    }
+    return 0;
+}
+
+async function purchaseDungeonFromListing(dungeonId, price) {
+    const contract = await getContract();
+    if (contract) {
+        const tx = await contract.purchaseDungeon(dungeonId, { value: price });
+        await tx.wait();
     }
 }
 

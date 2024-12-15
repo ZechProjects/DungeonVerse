@@ -92,7 +92,7 @@
         const end = start + itemsPerPage;
         const paginatedDungeons = filteredDungeons.slice(start, end);
 
-        paginatedDungeons.forEach((dungeon) => {
+        paginatedDungeons.forEach(async (dungeon) => {
           const dungeonCard = `
             <div class="col-md-3 mb-4">
               <div class="card">
@@ -104,8 +104,15 @@
                       Plays: ${dungeon.plays}<br>
                       Rating: ${dungeon.rating} ⭐<br>
                       🔍 <a href="https://shapescan.xyz/address/${dungeon.address}" target="_blank">${dungeon.address}</a>
+                      ${await isDungeonListed(dungeon.id) ? 
+                        `<br>💰 Price: ${ethers.formatEther(await getDungeonListingPrice(dungeon.id))} ETH` : 
+                        ''
+                      }
                     </p>
-                    <button class="btn btn-primary" onclick="playDungeon(${JSON.stringify(dungeon).replace(/"/g, '&quot;')})">Play</button>
+                    ${await isDungeonListed(dungeon.id) ? 
+                      `<button class="btn btn-success" onclick="purchaseDungeon('${dungeon.id}')">Purchase</button>` :
+                      `<button class="btn btn-primary" onclick="playDungeon(${JSON.stringify(dungeon).replace(/"/g, '&quot;')})">Play</button>`
+                    }
                 </div>
               </div>
             </div>
@@ -241,6 +248,21 @@
         } catch (error) {
             console.error('Error preparing dungeon:', error);
             alert('Failed to load dungeon. Please try again.');
+        }
+    }
+    </script>
+    <script>
+    async function purchaseDungeon(dungeonId) {
+        try {
+            const price = await getDungeonListingPrice(dungeonId);
+            if (confirm(`Are you sure you want to purchase this dungeon for ${ethers.formatEther(price)} ETH?`)) {
+                await purchaseDungeonFromListing(dungeonId, price);
+                alert('Dungeon purchased successfully!');
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Error purchasing dungeon:', error);
+            alert('Failed to purchase dungeon. Please try again.');
         }
     }
     </script>
