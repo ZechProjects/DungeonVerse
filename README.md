@@ -41,5 +41,12 @@ Walls can be specified with different textures.
 
 E.g.
 
-<img src="https://raw.githubusercontent.com/ZechProjects/DungeonVerse/refs/heads/main/app/public/assets/img/rockwall.png?token=GHSAT0AAAAAAC2QG3ZCQ7LGZQP4CBTFZOMMZ265NKA" alt="Rock Wall" width="200"/>
-<img src="https://raw.githubusercontent.com/ZechProjects/DungeonVerse/refs/heads/main/app/public/assets/img/wall3.png?token=GHSAT0AAAAAAC2QG3ZCDPBL6FXEZQNCLA2GZ265PBA" alt="Rock Wall" width="200"/>
+<img src="app/public/assets/img/rockwall.png" alt="Rock Wall" width="200"/>
+<img src="app/public/assets/img/wall3.png" alt="Rock Wall" width="200"/>
+
+### Objects
+
+Builders can add objects such as props or characters
+
+<img src="submission/screenshot/chest.jpg" alt="Treasure Chest" width="200"/>
+<img src="submission/screenshot/enemy.jpg" alt="Treasure Chest" width="200"/>
