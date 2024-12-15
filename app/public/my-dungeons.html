@@ -193,7 +193,36 @@
                     throw new Error('Dungeon not found');
                 }
 
-                console.log(dungeon);
+                // Get linked NFTs for this dungeon
+                const linkedItems = await getLinkedItems(dungeonId);
+                const linkedNFTsWithMetadata = await Promise.all(linkedItems.map(async item => {
+                    try {
+                        const nftContract = await getIERC721Contract(item.nftContract);
+                        const tokenURI = await nftContract.tokenURI(item.tokenId);
+                        const metadataURL = tokenURI.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+                        const response = await fetch(metadataURL);
+                        const metadata = await response.json();
+                        const imageUrl = metadata.image ? 
+                            metadata.image.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/') : 
+                            'assets/img/placeholder-image.jpg';
+                        
+                        return {
+                            contractAddress: item["0"],
+                            tokenId: item["1"].toString(),
+                            image: imageUrl,
+                            name: metadata.name || `NFT #${item.tokenId}`
+                        };
+                    } catch (error) {
+                        console.error(`Error fetching metadata for token ${item.tokenId}:`, error);
+                        return null;
+                    }
+                }));
+
+                // Filter out any failed metadata fetches
+                const validLinkedNFTs = linkedNFTsWithMetadata.filter(nft => nft !== null);
+                
+                // Add linked NFTs to dungeon data
+                dungeon.linkedNFTs = validLinkedNFTs;
                 
                 if (isValidDungeonMap(dungeon.map)) {
                     localStorage.setItem('currentDungeon', JSON.stringify(dungeon));
