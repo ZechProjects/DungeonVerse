@@ -13,6 +13,10 @@ function init() {
   );
   camera.position.set(player.x * wallSize, wallSize / 2, player.y * wallSize);
   camera.lookAt(player.x * wallSize, wallSize / 2, (player.y + 1) * wallSize);
+  // Create a directional light that follows the player
+  playerLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  playerLight.position.set(player.x * wallSize, wallSize, player.y * wallSize);
+  scene.add(playerLight);
 
   // Set up renderer
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -26,14 +30,16 @@ function init() {
   const ambientLight = new THREE.AmbientLight(0xffffff, 1);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-  directionalLight.position.set(1, 1, 1).normalize();
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  directionalLight.position.set(0, 100, 0);
   scene.add(directionalLight);
 
   setup_flicker(scene);
 
   // Create dungeon walls based on the map
-  createWalls();
+  placeWalls();
+
+  placeObjects();
 
   // Add floor
   const floorTexture = new THREE.TextureLoader().load(
@@ -97,24 +103,19 @@ function init() {
   console.log("key", key);
 
   // Example usage of loadGLTFModel
-  loadGLTFModel(
+  /*loadGLTFModel(
     assetsPath + "3d/objects/chest.glb",
     new THREE.Vector3(10, 2, 18.5),
     8,
     new THREE.Euler(0, Math.PI / 2, 0)
   );
 
-  var textureLoader = new THREE.TextureLoader();
-  var remap = textureLoader.load(assetsPath + "3d/enemies/skeleton_grunt.jpg");
-  var remap = new THREE.MeshStandardMaterial({
-    map: textureLoader.load(assetsPath + "3d/enemies/skeleton_grunt.jpg"),
-  });
   let enemy = loadFBXModel(
-    assetsPath + "3d/enemies/Samba.fbx",
-    new THREE.Vector3(50, 0, 20),
-    0.05,
-    new THREE.Euler(0, (Math.PI / 4) * 3, 0)
-  );
+    assetsPath + "3d/enemies/goblin.fbx",
+    new THREE.Vector3(40, 0, 20),
+    0.01,
+    new THREE.Euler(0, -Math.PI / 2, 0)
+  );*/
 
   // Add event listener for player controls
   document.addEventListener("keydown", handleKeyDown);
@@ -123,6 +124,45 @@ function init() {
   animate();
 
   startGame();
+}
+
+// Update the light position and direction to follow the player
+function updatePlayerLight() {
+  playerLight.position.set(player.x * wallSize, wallSize, player.y * wallSize);
+  switch (player.heading) {
+    case "South":
+      //Facing South = down
+      playerLight.target.position.set(
+        player.x * wallSize,
+        wallSize,
+        (player.y + 1) * wallSize
+      );
+      break;
+    case "West":
+      //Facing
+      playerLight.target.position.set(
+        (player.x - 1) * wallSize,
+        wallSize,
+        player.y * wallSize
+      );
+      break;
+    case "North":
+      playerLight.target.position.set(
+        player.x * wallSize,
+        wallSize,
+        (player.y - 1) * wallSize
+      );
+      break;
+    case "East":
+      playerLight.target.position.set(
+        (player.x + 1) * wallSize,
+        wallSize,
+        player.y * wallSize
+      );
+      break;
+  }
+
+  playerLight.target.updateMatrixWorld();
 }
 
 function startGame() {
@@ -151,10 +191,56 @@ function isWall(x, y) {
 function animate() {
   requestAnimationFrame(animate);
   particleSystem.rotation.y += 0.01;
+  updatePlayerLight();
+  mixers.forEach((mixer) => mixer.update(clock.getDelta()));
   renderer.render(scene, camera);
 }
 
-function createWalls() {
+function placeObjects() {
+  // Place objects in the dungeon
+  for (let row = 0; row < dungeonMap.length; row++) {
+    for (let col = 0; col < dungeonMap[row].length; col++) {
+      if (
+        dungeonMap[row][col]?.objects &&
+        dungeonMap[row][col]?.objects.length > 0
+      ) {
+        console.log("Placing objects at", col, row);
+        dungeonMap[row][col].objects.forEach((object) => {
+          switch (object.id) {
+            case "key":
+              const key = load_sprite(
+                "key",
+                new THREE.Vector3(col * wallSize, 4, row * wallSize),
+                3,
+                new THREE.Euler(0, -90, 0)
+              );
+              break;
+            case "chest":
+              console.log("Loading chest at", col, row);
+              loadGLTFModel(
+                assetsPath + "3d/objects/chest.glb",
+                new THREE.Vector3(col * wallSize, 2, row * wallSize),
+                8,
+                new THREE.Euler(0, object.rotation, 0)
+              );
+              break;
+            case "enemy":
+              console.log("Loading enemy at", col, row);
+              loadFBXModel(
+                assetsPath + "3d/enemies/goblin.fbx",
+                new THREE.Vector3(col * wallSize, 0, row * wallSize),
+                0.01,
+                new THREE.Euler(0, object.rotation, 0)
+              );
+              break;
+          }
+        });
+      }
+    }
+  }
+}
+
+function placeWalls() {
   let wallTexture = {};
   let wallMaterial;
 
@@ -285,9 +371,6 @@ function loadFBXModel(path, position, scale, rotation, material = null) {
           const mixer = new THREE.AnimationMixer(child);
           const animations = child.animations;
           console.log("animations", child.name, animations);
-          if (material) {
-            child.material = material;
-          }
           if (child.material.map) {
             child.material.map.minFilter = THREE.LinearFilter;
             child.material.map.magFilter = THREE.LinearFilter;
@@ -312,15 +395,8 @@ function loadFBXModel(path, position, scale, rotation, material = null) {
         action.play();
       }
 
-      // Update the animation in the render loop
-      function animate() {
-        requestAnimationFrame(animate);
-        const delta = clock.getDelta();
-        mixer.update(delta);
-        renderer.render(scene, camera);
-      }
-
-      animate();
+      mixers.push(mixer);
+      console.log("mixers", mixers);
     },
     undefined,
     function (error) {

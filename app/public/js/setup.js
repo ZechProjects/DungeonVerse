@@ -2,11 +2,14 @@ let particleSystem = null;
 let redOverlay = null;
 let scene, camera, renderer, controls;
 const wallSize = 10;
-const player = { x: 1, y: 1, direction: 0 }; // Initial player position and facing direction (0: +Z)
+const player = { x: 1, y: 1, direction: 0, heading: "South" }; // Initial player position and facing direction (0: +Z)
 const assetsPath = "assets/";
 let touchStartX = 0;
 let touchStartY = 0;
 const clock = new THREE.Clock();
+
+let playerLight = null;
+let mixers = [];
 
 let mapSizeX = 20;
 let mapSizeY = 5;
@@ -60,15 +63,15 @@ let dungeonMap = [
   ],
   [
     { wall: true, texture: "rockwall" },
-    {},
+    { objects: [{ id: "chest", rotation: Math.PI / 2 }] },
     { wall: true, texture: "rockwall" },
     ,
+    { objects: [{ id: "enemy", rotation: -Math.PI / 2 }] },
     {},
     {},
     {},
     {},
-    {},
-    { objects: { id: "key", rotation: 0 } },
+    { objects: [{ id: "key", rotation: 0 }] },
     { wall: true, texture: "wall" },
   ],
   [

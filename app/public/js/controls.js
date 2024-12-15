@@ -1,17 +1,6 @@
 function checkIsEndPoint() {
   if (GAME_STATE === GAME_STATES.ENDED) return;
 
-  console.log(
-    "player.x",
-    player.x,
-    "endX",
-    endX,
-    "player.y",
-    player.y,
-    "endY",
-    endY
-  );
-
   if (player.x === endX && player.y === endY) {
     GAME_STATE = GAME_STATES.ENDED;
 
@@ -36,7 +25,6 @@ function handleKeyDown(event) {
   let newX = player.x;
   let newY = player.y;
   let newDirection = player.direction;
-
   switch (event.key) {
     case "ArrowUp": // Move forward
     case "w": // Move forward
@@ -57,10 +45,12 @@ function handleKeyDown(event) {
     case "a": // Turn left
     case "ArrowLeft": // Turn left
       newDirection += Math.PI / 2;
+      updateDirection("left");
       break;
     case "ArrowRight": // Turn right
     case "d": // Turn right
       newDirection -= Math.PI / 2;
+      updateDirection("right");
       break;
   }
 
@@ -96,6 +86,40 @@ function increaseMoves() {
   play_sound("walk.wav");
 }
 
+function updateDirection(motion) {
+  switch (player.heading) {
+    case "South":
+      if (motion === "right") {
+        player.heading = "West";
+      } else {
+        player.heading = "East";
+      }
+      break;
+    case "West":
+      if (motion === "right") {
+        player.heading = "North";
+      } else {
+        player.heading = "South";
+      }
+      break;
+    case "North":
+      if (motion === "right") {
+        player.heading = "East";
+      } else {
+        player.heading = "West";
+      }
+      break;
+    case "East":
+      if (motion === "right") {
+        player.heading = "South";
+      } else {
+        player.heading = "North";
+      }
+      break;
+  }
+  document.getElementById("heading").innerText = player.heading;
+}
+
 // Handle touch start
 function handleTouchStart(event) {
   event.preventDefault(); // Prevent default touch behavior (e.g., scrolling)
@@ -128,9 +152,11 @@ function handleTouchMove(event) {
     if (diffX > 0) {
       // Swipe left
       newDirection -= Math.PI / 2;
+      updateDirection("left");
     } else {
       // Swipe right
       newDirection += Math.PI / 2;
+      updateDirection("right");
     }
   } else {
     // Vertical swipe
