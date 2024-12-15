@@ -100,6 +100,15 @@ let dungeonMap = [
   ],
 ];
 
+if(localStorage.getItem('currentDungeon')) {
+  const dungeonData = localStorage.getItem('currentDungeon');
+  const dungeon = JSON.parse(dungeonData);
+  dungeonMap = dungeon.map
+  console.log("reached here")
+}
+
+console.log(dungeonMap)
+
 let endX = 8;
 let endY = 2;
 
