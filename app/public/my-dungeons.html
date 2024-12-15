@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dungeons</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
+    <script src="js/nft.js"></script>
+    <script src="js/connect.js"></script>
+    <script>
+        const asyncFunc = async () => {
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            return accounts;
+        }
+        asyncFunc().then(console.log);
+    </script>
+    <style>
+        .map-container {
+            background-color: #f0f0f0;
+            padding: 5px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+        .cell {
+            border: 1px solid #ccc;
+        }
+        .linked-nfts-container {
+            background-color: rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 5px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .linked-nft-item {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 5px;
+            margin-bottom: 5px;
+            border-radius: 3px;
+        }
+
+        .linked-nft-item:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body class="bg-dark text-white text-center">
+    <div id="nav-placeholder"></div>
+
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">My Dungeons</h1>
+        <div id="dungeons-container" class="row">
+            <!-- Dungeons will be loaded here -->
+        </div>
+    </div>
+
+    <div id="connect-placeholder"></div>
+
+    <div class="modal fade" id="linkNFTModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">Link NFT to Dungeon</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="linkNFTForm">
+                        <div class="form-group">
+                            <label>NFT Contract Address:</label>
+                            <input type="text" class="form-control" id="nftContractAddress" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Token ID:</label>
+                            <input type="number" class="form-control" id="tokenId" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Linking Charge (ETH):</label>
+                            <input type="number" class="form-control" id="linkingCharge" step="0.001" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="handleLinkNFT()">Link NFT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load navigation and connect modal
+        fetch("nav.html")
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("nav-placeholder").innerHTML = data;
+            });
+
+        fetch("connect.html")
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("connect-placeholder").innerHTML = data;
+            });
+
+        async function loadMyDungeons() {
+            const dungeons = await fetchDungeons();
+            const container = document.getElementById('dungeons-container');
+            container.innerHTML = ''; // Clear existing content
+            
+            dungeons.forEach(dungeon => {
+                const isMapValid = isValidDungeonMap(dungeon.map);
+                const dungeonCard = `
+                    <div class="col-md-4 mb-4">
+                        <div class="card bg-secondary">
+                            <img src="${dungeon.image}" class="card-img-top" alt="Dungeon">
+                            <div class="card-body">
+                                <h5 class="card-title">${dungeon.name}</h5>
+                                <div class="map-container" style="display: grid; grid-template-columns: repeat(20, 10px); grid-template-rows: repeat(20, 10px); gap: 1px; margin: 10px auto;">
+                                    ${generateMapHtml(dungeon.map)}
+                                </div>
+                                <p class="card-text">
+                                    Rating: ${dungeon.rating}<br>
+                                    Plays: ${dungeon.plays}<br>
+                                    Difficulty: ${dungeon.difficulty}
+                                </p>
+                                <div class="linked-nfts mb-3">
+                                    <h6>Linked NFTs:</h6>
+                                    <div id="linked-nfts-${dungeon.id}" class="linked-nfts-container">
+                                        Loading linked NFTs...
+                                    </div>
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary ${!isMapValid ? 'disabled' : ''}" 
+                                            onclick="playDungeon('${dungeon.id.toString()}')"
+                                            ${!isMapValid ? 'disabled' : ''}>
+                                        ${isMapValid ? 'Play' : 'Invalid Map'}
+                                    </button>
+                                    <button class="btn btn-info" 
+                                            onclick="openLinkNFTModal('${dungeon.id}')">
+                                        Link NFT
+                                    </button>
+                                    <button class="btn btn-danger" 
+                                            onclick="deleteDungeon('${dungeon.id}')">
+                                        Delete
+                                    </button>
+                                </div>
+                                ${!isMapValid ? '<div class="text-warning mt-2">This dungeon map is invalid. It requires at least one start point.</div>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += dungeonCard;
+                // Load linked NFTs for this dungeon
+                displayLinkedNFTs(dungeon.id);
+            });
+        }
+
+        // Check if wallet is connected and load dungeons
+        window.addEventListener('load', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    loadMyDungeons();
+                } else {
+                    document.getElementById('dungeons-container').innerHTML = `
+                        <div class="col-12 text-center">
+                            <h3>Please connect your wallet to view your dungeons</h3>
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#connectModal">
+                                Connect Wallet
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        async function playDungeon(dungeonId) {
+            try {
+                const dungeons = await fetchDungeons();
+                const dungeon = dungeons.find(d => d.id.toString() === dungeonId);
+                
+                if (!dungeon) {
+                    throw new Error('Dungeon not found');
+                }
+
+                console.log(dungeon);
+                
+                if (isValidDungeonMap(dungeon.map)) {
+                    localStorage.setItem('currentDungeon', JSON.stringify(dungeon));
+                    window.location.href = 'index.html';
+                } else {
+                    alert('This dungeon map is invalid and cannot be played.');
+                }
+            } catch (error) {
+                console.error('Error playing dungeon:', error);
+                alert('Failed to load dungeon. Please try again.');
+            }
+        }
+
+        // Add this helper function to generate the map HTML
+        function generateMapHtml(mapData) {
+            if (!mapData) return '';
+            
+            let html = '';
+            for (let y = 0; y < 20; y++) {
+                for (let x = 0; x < 20; x++) {
+                    const cell = mapData[y]?.[x] || {};
+                    let cellClass = 'cell';
+                    let style = 'width: 10px; height: 10px; background-color: #fff;';
+
+                    if (cell.wall) {
+                        style = 'width: 10px; height: 10px; background-color: #000;';
+                    } else if (cell.start) {
+                        style = 'width: 10px; height: 10px; background-color: #28a745;';
+                    } else if (cell.objects) {
+                        style = 'width: 10px; height: 10px; background-color: #17a2b8;';
+                    }
+
+                    html += `<div class="${cellClass}" style="${style}"></div>`;
+                }
+            }
+            return html;
+        }
+
+        function isValidDungeonMap(map) {
+            if (!Array.isArray(map)) return false;
+            
+            // Check if map has at least one start point
+            let hasStart = false;
+            
+            for (let y = 0; y < map.length; y++) {
+                if (!Array.isArray(map[y])) return false;
+                
+                for (let x = 0; x < map[y].length; x++) {
+                    const cell = map[y][x];
+                    if (cell && cell.start) {
+                        hasStart = true;
+                    }
+                }
+            }
+            
+            return hasStart;
+        }
+
+        async function deleteDungeon(dungeonId) {
+            if (confirm('Are you sure you want to delete this dungeon? This action cannot be undone.')) {
+                try {
+                    await burnDungeon(dungeonId);
+                    location.reload();
+                } catch (error) {
+                    console.error('Error deleting dungeon:', error);
+                    alert('Failed to delete dungeon. Please try again.');
+                }
+            }
+        }
+
+        let currentDungeonId = null;
+
+        function openLinkNFTModal(dungeonId) {
+            currentDungeonId = dungeonId;
+            $('#linkNFTModal').modal('show');
+        }
+
+        async function handleLinkNFT() {
+            const nftContractAddress = document.getElementById('nftContractAddress').value;
+            const tokenId = document.getElementById('tokenId').value;
+            const charge = ethers.parseEther(document.getElementById('linkingCharge').value);
+
+            try {
+                // First set the linking charge and sign terms
+                await setLinkingChargeAndSignTerms(currentDungeonId, nftContractAddress, tokenId, charge);
+                
+                // Then add the linked asset
+                await addLinkedAsset(currentDungeonId, nftContractAddress, tokenId, charge);
+                
+                alert('NFT successfully linked to dungeon!');
+                $('#linkNFTModal').modal('hide');
+                location.reload(); // Refresh to show updated state
+            } catch (error) {
+                console.error('Error linking NFT:', error);
+                alert('Failed to link NFT. Please check the console for details.');
+            }
+        }
+
+        // Add this function to load and display linked NFTs
+        async function displayLinkedNFTs(dungeonId) {
+            try {
+                const linkedItems = await getLinkedItems(dungeonId);
+                console.log(linkedItems)
+                const container = document.getElementById(`linked-nfts-${dungeonId}`);
+                
+                if (!linkedItems || linkedItems.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No NFTs linked to this dungeon</p>';
+                    return;
+                }
+
+                const nftList = linkedItems.map(item => `
+                    <div class="linked-nft-item">
+                        <small>Contract: ${shortenAddress(item.nftContract)}</small><br>
+                        <small>Token ID: ${item.tokenId}</small>
+                    </div>
+                `).join('');
+
+                container.innerHTML = nftList;
+            } catch (error) {
+                console.error('Error displaying linked NFTs:', error);
+                const container = document.getElementById(`linked-nfts-${dungeonId}`);
+                container.innerHTML = '<p class="text-danger">Error loading linked NFTs</p>';
+            }
+        }
+
+        // Helper function to shorten addresses
+        function shortenAddress(address) {
+            return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+        }
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

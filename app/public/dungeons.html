@@ -74,6 +74,7 @@
       // Load dungeons from blockchain
       async function loadDungeons() {
         dungeonsRes = await fetchDungeons();
+        dungeonsRes = dungeonsRes.filter(item => item.isVisible == true);
         displayDungeons(dungeonsRes, currentPage);
         updatePagination(dungeonsRes);
       }
@@ -101,7 +102,7 @@
                       Rating: ${dungeon.rating} ⭐<br>
                       🔍 <a href="https://shapescan.xyz/address/${dungeon.address}" target="_blank">${dungeon.address}</a>
                     </p>
-                    <button class="btn btn-primary">Play</button>
+                    <button class="btn btn-primary" onclick="playDungeon(${JSON.stringify(dungeon).replace(/"/g, '&quot;')})">Play</button>
                 </div>
               </div>
             </div>
@@ -195,5 +196,14 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="/app/public/js/connect.js"></script>
+    <script>
+    function playDungeon(dungeon) {
+        // Store the dungeon data in localStorage
+        localStorage.setItem('currentDungeon', JSON.stringify(dungeon));
+        // Redirect to index.html
+        window.location.href = 'index.html';
+    }
+    </script>
   </body>
 </html>

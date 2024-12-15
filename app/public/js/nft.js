@@ -7,7 +7,8 @@ const client = new Client()
 const storage = new Storage(client);
 
 const SEPOLIA_RPC_URL = 'YOUR_ALCHEMY_SEPOLIA_RPC_URL'; // optional as wallets also have rpc url and reading from blockchain is easy
-const contractAddress = "0xfd510fdb2a406b985c645e74890f8d4509d8d264"; // Replace with your contract's address
+const contractAddress = "0xb31689fcd9a74f57854f3ba703039239ff60529a"; // sepolia contract's address
+// const contractAddress = "0xd2177601a16827569907f508de356849d935b089"; // shape sepolia contract's address
 
 async function getProvider() {
   if (typeof window.ethereum !== 'undefined') {
@@ -23,7 +24,7 @@ async function getContract() {
   const provider = await getProvider();
   if (provider) {
     const signer = await provider.getSigner();
-    const response = await fetch('../../../contracts/Dungeon.json'); // Adjust the path as needed
+    const response = await fetch('contracts/Dungeon.json'); // Adjust the path as needed
     const contractABI = await response.json();
     return new ethers.Contract(contractAddress, contractABI, signer);
   }
@@ -34,7 +35,7 @@ async function getIERC721Contract(contractAddress) {
   const provider = await getProvider();
   if (provider) {
     const signer = await provider.getSigner();
-    const response = await fetch('../../../contracts/IERC721.json'); // Adjust the path as needed
+    const response = await fetch('contracts/IERC721.json'); // Adjust the path as needed
     const contractABI = await response.json();
     return new ethers.Contract(contractAddress, contractABI, signer);
   }
@@ -172,51 +173,66 @@ async function fetchDungeons() {
   const contract = await getContract();
   if (contract) {
     try {
-      const filter = contract.filters.DungeonCreated(null, null, null);
-      const results = await contract.queryFilter(filter);
-      console.log(results)
+      // Get all DungeonCreated events
+      const creationFilter = contract.filters.DungeonCreated(null, null, null);
+      const creationEvents = await contract.queryFilter(creationFilter);
+      console.log(creationEvents)
       
-      // Transform the results into the format expected by the UI
-      const fetchedDungeons = await Promise.all(results.map(async (event) => {
-        const dungeonId = event.args[0];
-        const dungeonOwner = event.args[1];
-        const mapHash = event.args[2];
-        const dbUrl = event.args[3];
+      // Get all Transfer events to address(0) which indicates burning/deletion
+      const burnFilter = contract.filters.Transfer(null, '0x0000000000000000000000000000000000000000', null);
+      const burnEvents = await contract.queryFilter(burnFilter);
+      console.log(burnEvents)
+      
+      // Create a Set of burned tokenIds for efficient lookup
+      const burnedTokenIds = new Set(burnEvents.map(event => event.args[2].toString()));
+      console.log(burnedTokenIds)
+      
+      // Filter out burned dungeons and transform the results
+      const fetchedDungeons = await Promise.all(creationEvents
+        .filter(event => !burnedTokenIds.has(event.args[0].toString()))
+        .map(async (event) => {
+          const dungeonId = parseInt(event.args[0]);
+          const dungeonOwner = event.args[1];
+          const mapHash = event.args[2];
+          const dbUrl = event.args[3];
 
-        console.log(dbUrl)
-        console.log(mapHash)
-
-        // Fetch the map data from the dbUrl
-        try {
-          const response = await fetch(dbUrl);
-          let mapData = null
+          // Fetch the map data from the dbUrl
           try {
-            mapData = await response.json();
-            console.log(195, mapData)
-          } catch {
+            const response = await fetch(dbUrl);
+            let mapData = null;
+            try {
+              mapData = await response.json();
+              if (Object.keys(mapData).length === 0 || mapData.code === 400) {
+                throw new Error('Invalid map data');
+              }
+            } catch {
+              return {
+                id: dungeonId,
+                name: `Dungeon special #${dungeonId.toString()}`,
+                rating: (Math.random() * 2 + 3).toFixed(1),
+                plays: Math.floor(Math.random() * 1000),
+                image: `assets/img/dungeons/${(dungeonId.toString() % 8) + 1}.png`,
+                difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
+                address: contractAddress,
+                isVisible: false
+              };
+            }
+
             return {
-              name: `Dungeon #${dungeonId}`,
-              rating: (Math.random() * 2 + 3).toFixed(1), // Random rating between 3-5
+              id: dungeonId,
+              name: `Dungeon special #${dungeonId.toString()}`,
+              rating: (Math.random() * 2 + 3).toFixed(1),
               plays: Math.floor(Math.random() * 1000),
-              image: `assets/img/dungeons/${(dungeonId % 8) + 1}.png`, // Cycle through available images
+              image: `assets/img/dungeons/${(dungeonId.toString() % 8) + 1}.png`,
               difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
               address: contractAddress,
+              map: mapData,
+              isVisible: true
             };
+          } catch (error) {
+            console.error("Error fetching map data:", error);
+            return null;
           }
-
-          return {
-            name: `Dungeon #${dungeonId}`,
-            rating: (Math.random() * 2 + 3).toFixed(1), // Random rating between 3-5
-            plays: Math.floor(Math.random() * 1000),
-            image: `assets/img/dungeons/${(dungeonId % 8) + 1}.png`, // Cycle through available images
-            difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)],
-            address: contractAddress,
-            map: mapData
-          };
-        } catch (error) {
-          console.error("Error fetching map data:", error);
-          return null;
-        }
       }));
 
       return fetchedDungeons.filter(dungeon => dungeon !== null);
@@ -274,11 +290,18 @@ async function setLinkingChargeAndSignTerms(dungeonId, nftContract, tokenId, cha
   const contract = await getContract();
   if (contract) {
     try {
+      console.log("297")
+      console.log(nftContract)
+      console.log(tokenId)
+      console.log(dungeonId)
+      console.log(charge)
       const txLinkingCharge = await contract.setLinkingCharge(nftContract, tokenId, dungeonId, charge);
+      console.log("299")
       await txLinkingCharge.wait();  
+      console.log(300)
       const txSignTerms = await contract.signTerms(nftContract, tokenId, dungeonId, 2*60*60); // setting fixed validity period of 2 hours
       await txSignTerms.wait();
-      console.log(`Linking charge set and terms signed for NFT: Contract ${nftContract}, Token ID ${tokenId}`);
+      console.log(`Linking charge set and terms signed for NFT: Contract ${nftContract}, Token ID ${tokenId.toString()}`);
     } catch (error) {
       console.error("Error setting linking charge and signing terms:", error);
     }
@@ -312,14 +335,31 @@ async function getImportedItems(dungeonId) {
 
 async function getLinkedItems(dungeonId) {
   const contract = await getContract();
+  let importedItems = null;
   if (contract) {
     try {
-      const importedItems = await contract.getLinkedAssets(dungeonId);
+      importedItems = await contract.getLinkedAssets(dungeonId);
       console.log(importedItems);
     } catch (error) {
       console.error("Error getting imported items:", error);
     }
   }
+  return importedItems
+}
+
+async function burnDungeon(tokenId) {
+    const contract = await getContract();
+    if (contract) {
+        try {
+            const tx = await contract.deleteDungeon(tokenId);
+            await tx.wait();
+            console.log(`Dungeon burned successfully: Token ID ${tokenId}`);
+            return tx;
+        } catch (error) {
+            console.error("Error burning Dungeon:", error);
+            throw error;
+        }
+    }
 }
 
 // todo: handle get imported items / linked items when the list is empty
