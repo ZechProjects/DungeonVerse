@@ -22,6 +22,17 @@
         }
         asyncFunc().then(console.log);
     </script>
+    <style>
+        .map-container {
+            background-color: #f0f0f0;
+            padding: 5px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+        .cell {
+            border: 1px solid #ccc;
+        }
+    </style>
 </head>
 <body class="bg-dark text-white text-center">
     <div id="nav-placeholder"></div>
@@ -54,18 +65,33 @@
             const container = document.getElementById('dungeons-container');
             
             dungeons.forEach(dungeon => {
+                const isMapValid = isValidDungeonMap(dungeon.map);
                 const dungeonCard = `
                     <div class="col-md-4 mb-4">
                         <div class="card bg-secondary">
                             <img src="${dungeon.image}" class="card-img-top" alt="Dungeon">
                             <div class="card-body">
                                 <h5 class="card-title">${dungeon.name}</h5>
+                                <div class="map-container" style="display: grid; grid-template-columns: repeat(20, 10px); grid-template-rows: repeat(20, 10px); gap: 1px; margin: 10px auto;">
+                                    ${generateMapHtml(dungeon.map)}
+                                </div>
                                 <p class="card-text">
                                     Rating: ${dungeon.rating}<br>
                                     Plays: ${dungeon.plays}<br>
                                     Difficulty: ${dungeon.difficulty}
                                 </p>
-                                <button class="btn btn-primary" onclick="playDungeon('${dungeon.address}')">Play</button>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary ${!isMapValid ? 'disabled' : ''}" 
+                                            onclick="playDungeon('${JSON.stringify(dungeon)}')"
+                                            ${!isMapValid ? 'disabled' : ''}>
+                                        ${isMapValid ? 'Play' : 'Invalid Map'}
+                                    </button>
+                                    <button class="btn btn-danger" 
+                                            onclick="deleteDungeon('${dungeon.address}')">
+                                        Delete
+                                    </button>
+                                </div>
+                                ${!isMapValid ? '<div class="text-warning mt-2">This dungeon map is invalid. It requires at least one start point.</div>' : ''}
                             </div>
                         </div>
                     </div>
@@ -93,8 +119,72 @@
             }
         });
 
-        function playDungeon(address) {
-            window.location.href = `/?dungeon=${address}`;
+        async function playDungeon(dungeonStr) {
+            const dungeon = JSON.parse(dungeonStr);
+            if (isValidDungeonMap(dungeon.map)) {
+                localStorage.setItem('currentDungeon', JSON.stringify(dungeon));
+                window.location.href = 'index.html';
+            } else {
+                alert('This dungeon map is invalid and cannot be played.');
+            }
+        }
+
+        // Add this helper function to generate the map HTML
+        function generateMapHtml(mapData) {
+            if (!mapData) return '';
+            
+            let html = '';
+            for (let y = 0; y < 20; y++) {
+                for (let x = 0; x < 20; x++) {
+                    const cell = mapData[y]?.[x] || {};
+                    let cellClass = 'cell';
+                    let style = 'width: 10px; height: 10px; background-color: #fff;';
+
+                    if (cell.wall) {
+                        style = 'width: 10px; height: 10px; background-color: #000;';
+                    } else if (cell.start) {
+                        style = 'width: 10px; height: 10px; background-color: #28a745;';
+                    } else if (cell.objects) {
+                        style = 'width: 10px; height: 10px; background-color: #17a2b8;';
+                    }
+
+                    html += `<div class="${cellClass}" style="${style}"></div>`;
+                }
+            }
+            return html;
+        }
+
+        function isValidDungeonMap(map) {
+            if (!Array.isArray(map)) return false;
+            
+            // Check if map has at least one start point
+            let hasStart = false;
+            
+            for (let y = 0; y < map.length; y++) {
+                if (!Array.isArray(map[y])) return false;
+                
+                for (let x = 0; x < map[y].length; x++) {
+                    const cell = map[y][x];
+                    if (cell && cell.start) {
+                        hasStart = true;
+                    }
+                }
+            }
+            
+            return hasStart;
+        }
+
+        async function deleteDungeon(address) {
+            if (confirm('Are you sure you want to delete this dungeon? This action cannot be undone.')) {
+                try {
+                    await burnNFT(address); // This should be defined in your nft.js file
+                    // Reload the page or remove the card from DOM
+                    location.reload();
+                } catch (error) {
+                    console.error('Error deleting dungeon:', error);
+                    alert('Failed to delete dungeon. Please try again.');
+                }
+            }
         }
     </script>
 

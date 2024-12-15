@@ -7,7 +7,8 @@ const client = new Client()
 const storage = new Storage(client);
 
 const SEPOLIA_RPC_URL = 'YOUR_ALCHEMY_SEPOLIA_RPC_URL'; // optional as wallets also have rpc url and reading from blockchain is easy
-const contractAddress = "0xfd510fdb2a406b985c645e74890f8d4509d8d264"; // Replace with your contract's address
+const contractAddress = "0xb31689fcd9a74f57854f3ba703039239ff60529a"; // sepolia contract's address
+// const contractAddress = "0xd2177601a16827569907f508de356849d935b089"; // shape sepolia contract's address
 
 async function getProvider() {
   if (typeof window.ethereum !== 'undefined') {
@@ -234,6 +235,19 @@ async function fetchDungeons() {
   return [];
 }
 
+async function deleteDungeon(address) {
+    if (confirm('Are you sure you want to delete this dungeon? This action cannot be undone.')) {
+        try {
+            await burnNFT(address); // This should be defined in your nft.js file
+            // Reload the page or remove the card from DOM
+            location.reload();
+        } catch (error) {
+            console.error('Error deleting dungeon:', error);
+            alert('Failed to delete dungeon. Please try again.');
+        }
+    }
+}
+
 async function importItem(dungeonId, nftContractAddress, tokenId) {
   const contract = await getContract();
   if (contract) {
@@ -326,6 +340,27 @@ async function getLinkedItems(dungeonId) {
       console.error("Error getting imported items:", error);
     }
   }
+}
+
+async function burnNFT(tokenId) {
+    const contract = await getContract();
+    if (contract) {
+        try {
+            // Transfer to zero address (burn)
+            const zeroAddress = "0x0000000000000000000000000000000000000000";
+            const signerAddress = await window.ethereum.request({ 
+                method: 'eth_requestAccounts' 
+            }).then(accounts => accounts[0]);
+            
+            const tx = await contract.transferFrom(signerAddress, zeroAddress, tokenId);
+            await tx.wait();
+            console.log(`NFT burned successfully: Token ID ${tokenId}`);
+            return tx;
+        } catch (error) {
+            console.error("Error burning NFT:", error);
+            throw error;
+        }
+    }
 }
 
 // todo: handle get imported items / linked items when the list is empty
