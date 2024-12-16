@@ -70,8 +70,8 @@ let dungeonMap = [
     {},
     {},
     {},
-    {},
     { objects: [{ id: "key", rotation: 0 }] },
+    {},
     { wall: true, texture: "wall" },
   ],
   [
@@ -100,10 +100,10 @@ let dungeonMap = [
   ],
 ];
 
-if(localStorage.getItem('currentDungeon')) {
-  const dungeonData = JSON.parse(localStorage.getItem('currentDungeon'));
+if (localStorage.getItem("currentDungeon")) {
+  const dungeonData = JSON.parse(localStorage.getItem("currentDungeon"));
   dungeonMap = dungeonData.map;
-  
+
   // Add linked NFTs to the map if they exist
   if (dungeonData.linkedNFTs) {
     dungeonMap = addNFTsToMap(dungeonMap, dungeonData.linkedNFTs);
@@ -111,7 +111,7 @@ if(localStorage.getItem('currentDungeon')) {
   console.log("Map loaded with NFTs:", dungeonMap);
 }
 
-console.log(dungeonMap)
+console.log(dungeonMap);
 
 let endX = 8;
 let endY = 2;
@@ -191,64 +191,64 @@ function setup_flicker(scene) {
 
 // Add this function to randomly place NFTs in the dungeon
 function addNFTsToMap(map, linkedNFTs) {
-    if (!linkedNFTs || linkedNFTs.length === 0) return map;
+  if (!linkedNFTs || linkedNFTs.length === 0) return map;
 
-    const availableWalls = [];
-    
-    // Find all wall positions
-    for (let y = 0; y < map.length; y++) {
-        for (let x = 0; x < map[y].length; x++) {
-            if (map[y][x].wall) {
-                availableWalls.push([y, x]);
-            }
-        }
+  const availableWalls = [];
+
+  // Find all wall positions
+  for (let y = 0; y < map.length; y++) {
+    for (let x = 0; x < map[y].length; x++) {
+      if (map[y][x].wall) {
+        availableWalls.push([y, x]);
+      }
     }
+  }
 
-    // Randomly place NFTs on walls
-    linkedNFTs.forEach(nft => {
-        if (availableWalls.length > 0) {
-            const randomIndex = Math.floor(Math.random() * availableWalls.length);
-            const [y, x] = availableWalls.splice(randomIndex, 1)[0];
-            
-            map[y][x] = {
-                wall: true,
-                texture: "wall",
-                nft: {
-                    image: nft.image,
-                    name: nft.name,
-                    contractAddress: nft.contractAddress,
-                    tokenId: nft.tokenId
-                }
-            };
-        }
-    });
+  // Randomly place NFTs on walls
+  linkedNFTs.forEach((nft) => {
+    if (availableWalls.length > 0) {
+      const randomIndex = Math.floor(Math.random() * availableWalls.length);
+      const [y, x] = availableWalls.splice(randomIndex, 1)[0];
 
-    return map;
+      map[y][x] = {
+        wall: true,
+        texture: "wall",
+        nft: {
+          image: nft.image,
+          name: nft.name,
+          contractAddress: nft.contractAddress,
+          tokenId: nft.tokenId,
+        },
+      };
+    }
+  });
+
+  return map;
 }
 
 // Add this function to create a texture from an NFT image URL
 function createNFTTexture(imageUrl) {
-    const texture = new THREE.TextureLoader().load(imageUrl);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    return texture;
+  const texture = new THREE.TextureLoader().load(imageUrl);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  return texture;
 }
 
 // Modify your wall creation code to handle NFT textures
 function createWall(x, y, cell) {
-    const geometry = new THREE.BoxGeometry(wallSize, wallSize, wallSize);
-    let material;
+  const geometry = new THREE.BoxGeometry(wallSize, wallSize, wallSize);
+  let material;
 
-    if (cell.nft) {
-        // Create material with NFT texture
-        const nftTexture = createNFTTexture(cell.nft.image);
-        material = new THREE.MeshBasicMaterial({ map: nftTexture });
-    } else {
-        // Use regular wall texture
-        material = wallMaterial;
-    }
+  if (cell.nft) {
+    // Create material with NFT texture
+    const nftTexture = createNFTTexture(cell.nft.image);
+    material = new THREE.MeshBasicMaterial({ map: nftTexture });
+  } else {
+    // Use regular wall texture
+    material = wallMaterial;
+  }
 
-    const wall = new THREE.Mesh(geometry, material);
-    wall.position.set(x * wallSize, 0, y * wallSize);
-    return wall;
+  const wall = new THREE.Mesh(geometry, material);
+  wall.position.set(x * wallSize, 0, y * wallSize);
+  return wall;
 }

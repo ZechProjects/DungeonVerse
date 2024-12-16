@@ -93,15 +93,6 @@ function init() {
 
   setup_particles();
 
-  key = load_sprite(
-    "key",
-    new THREE.Vector3(80, 4, 20),
-    3,
-    new THREE.Euler(0, -90, 0)
-  );
-
-  console.log("key", key);
-
   // Example usage of loadGLTFModel
   /*loadGLTFModel(
     assetsPath + "3d/objects/chest.glb",

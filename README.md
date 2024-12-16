@@ -37,6 +37,8 @@ Platform: The game is playable on any browsers including mobile browsers.
 
 Building a dungeon can be done using the browser based map editor
 
+<img src="submission/screenshot/editor.jpg" alt="Treasure Chest" width="400"/>
+
 Walls can be specified with different textures.
 
 E.g.
@@ -50,3 +52,24 @@ Builders can add objects such as props or characters
 
 <img src="submission/screenshot/chest.jpg" alt="Treasure Chest" width="200"/>
 <img src="submission/screenshot/enemy.jpg" alt="Treasure Chest" width="200"/>
+
+#### Collaboration and incorporating other projects
+
+NFTs from other projects can be placed within dungeons to serve as rewards or decorations.
+
+<img src="submission/screenshot/collab.jpg" alt="Treasure Chest" width="200"/>
+
+# Attribution
+
+### Audio
+
+- https://freesound.org/
+
+### 3D Models
+
+- https://www.turbosquid.com/3d-models/hob-goblin-1480519
+- https://sketchfab.com/3d-models/low-poly-cartoon-chest-24d67f79797143259b58719b498973b7
+
+### Textures
+
+- AI Generated
