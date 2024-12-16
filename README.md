@@ -59,6 +59,31 @@ NFTs from other projects can be placed within dungeons to serve as rewards or de
 
 <img src="submission/screenshot/collab.jpg" alt="Treasure Chest" width="200"/>
 
+# Roadmap
+
+### V0.1 Hackathon Version - MVP
+
+- Deployed on mainnet
+- Basic dungeon building and minting
+- Dungeon directory
+
+### Next version
+
+- Multi-level dungeons
+- Linked dungeons
+- More actions/interactions types (advanced combat, puzzles)
+- Leaderboards
+- Improved UI/UX
+
+### Future
+
+- Story telling
+- Multi-player (PvP - Fastest person to clear dungeon wins)
+- In-game inventory
+- On-chain persistance saving (for large dungeons)
+- Parties system
+- Mintable themes (game UI skins)
+
 # Attribution
 
 ### Audio
