@@ -20,6 +20,7 @@ function play_sound(sound_file) {
   console.log("Playing sound: " + sound_file);
 
   if (audioAssets[sound_file]) {
+    audioAssets[sound_file].stop();
     audioAssets[sound_file].play();
     return;
   }

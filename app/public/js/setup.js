@@ -2,7 +2,15 @@ let particleSystem = null;
 let redOverlay = null;
 let scene, camera, renderer, controls;
 const wallSize = 10;
-const player = { x: 1, y: 1, direction: 0, heading: "South" }; // Initial player position and facing direction (0: +Z)
+const player = {
+  x: 1,
+  y: 1,
+  direction: 0,
+  heading: "South",
+  health: 10,
+  maxHealth: 10,
+}; // Initial player position and facing direction (0: +Z)
+console.log(player);
 const assetsPath = "assets/";
 let touchStartX = 0;
 let touchStartY = 0;
@@ -52,7 +60,7 @@ let dungeonMap = [
   [
     { wall: true, texture: "rockwall" },
     { start: true },
-    {},
+    { objects: [{ id: "healing_circle" }] },
     {},
     { wall: true, texture: "rockwall" },
     {},
@@ -66,7 +74,9 @@ let dungeonMap = [
     { objects: [{ id: "chest", rotation: Math.PI / 2 }] },
     { wall: true, texture: "rockwall" },
     ,
-    { objects: [{ id: "enemy", rotation: -Math.PI / 2 }] },
+    {
+      objects: [{ id: "enemy", rotation: -Math.PI / 2, health: 2, attack: 1 }],
+    },
     {},
     {},
     {},
