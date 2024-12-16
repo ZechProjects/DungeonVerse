@@ -91,32 +91,6 @@ function init() {
   );
   scene.add(ceiling);
 
-  setup_particles();
-
-  key = load_sprite(
-    "key",
-    new THREE.Vector3(80, 4, 20),
-    3,
-    new THREE.Euler(0, -90, 0)
-  );
-
-  console.log("key", key);
-
-  // Example usage of loadGLTFModel
-  /*loadGLTFModel(
-    assetsPath + "3d/objects/chest.glb",
-    new THREE.Vector3(10, 2, 18.5),
-    8,
-    new THREE.Euler(0, Math.PI / 2, 0)
-  );
-
-  let enemy = loadFBXModel(
-    assetsPath + "3d/enemies/goblin.fbx",
-    new THREE.Vector3(40, 0, 20),
-    0.01,
-    new THREE.Euler(0, -Math.PI / 2, 0)
-  );*/
-
   // Add event listener for player controls
   document.addEventListener("keydown", handleKeyDown);
   document.addEventListener("touchstart", handleTouchStart);
@@ -162,6 +136,12 @@ function init() {
 
   // Add the click event listener in init()
   document.addEventListener("click", onMouseClick);
+}
+
+function updateHealth() {
+  console.log("Updating health", player, player.health);
+  document.getElementById("health").innerText =
+    player.health + "/" + player.maxHealth;
 }
 
 // Update the light position and direction to follow the player
@@ -231,8 +211,17 @@ function isEnemy(x, y) {
   );
 
   if (check) {
-    play_sound("bash.wav");
+    play_sound("slash.ogg");
     shakeScreen();
+    dungeonMap[Math.round(y)][Math.round(x)].objects[0].health--;
+    showToast("You deal 1 hit to enemy!", "warning");
+    player.health--;
+    updateHealth();
+    showToast("You take 1 hit!", "warning");
+
+    if (dungeonMap[Math.round(y)]?.[Math.round(x)]?.objects[0].health > 0) {
+      return true;
+    }
 
     // Remove the enemy model from the scene
     console.log(
@@ -247,18 +236,16 @@ function isEnemy(x, y) {
     ][Math.round(x)].objects.filter((obj) => obj.id !== "enemy");
 
     // Play enemy death sound
-    play_sound("slash.ogg");
+
     play_sound("die.wav");
 
     confetti({
       particleCount: 100,
-      spread: 200,
+      spread: 150,
       origin: { y: 0.6 },
       colors: ["#FF0000", "#8B0000"], // Red, Dark Red
       shapes: ["circle"],
       scalar: 1.4,
-      gravity: 1.5,
-      ticks: 50,
     });
 
     // Show a message or perform other actions
@@ -287,9 +274,11 @@ function isChest(x, y) {
 
     confetti({
       particleCount: 100,
-      spread: 100,
+      spread: 60,
       origin: { y: 0.7 },
       colors: ["#FFD700", "#FFA500", "#FFFF00"], // Gold, Orange, Yellow
+      startVelocity: 20,
+      decay: 0.92,
     });
 
     // Play enemy death sound
@@ -301,10 +290,44 @@ function isChest(x, y) {
   return check;
 }
 
+function isHealingCircle(x, y) {
+  const check = dungeonMap[Math.round(y)]?.[Math.round(x)]?.objects?.some(
+    (obj) => obj.id === "healing_circle"
+  );
+
+  if (check) {
+    confetti({
+      particleCount: 50,
+      spread: 100,
+      origin: { y: 0.7 },
+      scalar: 3,
+      gravity: 0,
+      shapes: ["heart"],
+      colors: ["#ffffff"],
+      decay: 1,
+      ticks: 200,
+      rotate: false, // Prevent confetti from rotating
+    });
+
+    // Play enemy death sound
+    play_sound("heal.wav");
+
+    // Show a message or perform other actions
+    showToast("Fully healed!", "success");
+
+    console.log("Healing player to full health", player.health, player);
+    player.health = player.maxHealth;
+    updateHealth();
+  }
+  return check;
+}
+
 // Render the scene
 function animate() {
   requestAnimationFrame(animate);
-  particleSystem.rotation.y += 0.01;
+  if (particleSystem) {
+    particleSystem.rotation.y += 0.01;
+  }
   updatePlayerLight();
   mixers.forEach((mixer) => mixer.update(clock.getDelta()));
   renderer.render(scene, camera);
@@ -350,6 +373,9 @@ function placeObjects() {
               );
 
               object.model = model;
+              break;
+            case "healing_circle":
+              setup_particles(col * wallSize, 5, row * wallSize);
               break;
           }
         });

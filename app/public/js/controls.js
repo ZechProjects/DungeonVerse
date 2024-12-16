@@ -34,6 +34,7 @@ function handleKeyDown(event) {
       if (isChest(player.x + dirX, player.y + dirZ)) {
         break;
       }
+      isHealingCircle(player.x + dirX, player.y + dirZ);
       if (!isWall(player.x + dirX, player.y + dirZ)) {
         newX += dirX;
         newY += dirZ;
@@ -42,6 +43,7 @@ function handleKeyDown(event) {
       break;
     case "s": // Move backward
     case "ArrowDown": // Move backward
+      isHealingCircle(player.x - dirX, player.y - dirZ);
       if (!isWall(player.x - dirX, player.y - dirZ)) {
         newX -= dirX;
         newY -= dirZ;
@@ -170,6 +172,7 @@ function handleTouchMove(event) {
     const dirZ = Math.round(Math.cos(player.direction));
     if (diffY > 0) {
       // Swipe up
+      isHealingCircle(player.x + dirX, player.y + dirZ);
       if (isEnemy(player.x + dirX, player.y + dirZ)) {
         // do nothing
       } else if (isChest(player.x + dirX, player.y + dirZ)) {
@@ -181,6 +184,7 @@ function handleTouchMove(event) {
       }
     } else {
       // Swipe down
+      isHealingCircle(player.x - dirX, player.y - dirZ);
       if (!isWall(player.x - dirX, player.y - dirZ)) {
         newX -= dirX;
         newY -= dirZ;
