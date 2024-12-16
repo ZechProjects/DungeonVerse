@@ -59,6 +59,12 @@ NFTs from other projects can be placed within dungeons to serve as rewards or de
 
 <img src="submission/screenshot/collab.jpg" alt="Treasure Chest" width="200"/>
 
+# Smart Contracts
+
+All related smart contracts were built in a separate repo
+Please refer to this repo for reference:
+https://github.com/ssachin520280/dungeonMOW
+
 # Roadmap
 
 ### V0.1 Hackathon Version - MVP
