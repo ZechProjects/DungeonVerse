@@ -29,6 +29,9 @@ function disconnectWallet() {
 
 function updateConnectButton(address) {
   const connectButton = document.getElementById('connectButton');
+  if (!connectButton) {
+    return;
+  }
   if (address) {
     // When connected, show address and change data attributes
     const truncatedAddress = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
@@ -48,7 +51,7 @@ function updateConnectButton(address) {
 
 // Call this function whenever the wallet connection state changes
 // For example, after successful connection:
-window.ethereum.on('accountsChanged', function (accounts) {
+window?.ethereum?.on('accountsChanged', function (accounts) {
   if (accounts.length > 0) {
     updateConnectButton(accounts[0]);
   } else {

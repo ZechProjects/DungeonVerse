@@ -6,7 +6,7 @@ const client = new Client()
 
 const storage = new Storage(client);
 
-const SEPOLIA_RPC_URL = 'YOUR_ALCHEMY_SEPOLIA_RPC_URL'; // optional as wallets also have rpc url and reading from blockchain is easy
+const SEPOLIA_RPC_URL = 'https://eth-sepolia.g.alchemy.com/v2/a4A6nvCeEgA1VRGEEwGscYdRzPbXl5jL'; // optional as wallets also have rpc url and reading from blockchain is easy
 const contractAddress = "0x4ec50c554d55fb5710460490d65bb1f42d01df26"; // sepolia contract's address
 // const contractAddress = "0xb0a924c6e02562fd3da744b8dc9a5acdf2f31dd3"; // shape sepolia contract's address
 
@@ -15,18 +15,29 @@ async function getProvider() {
     // Use MetaMask's provider if available
     return new ethers.BrowserProvider(window.ethereum);
   } else {
-    const providerUrl = SEPOLIA_RPC_URL;
-    return new ethers.JsonRpcProvider(providerUrl);
+    // Create a provider with specific configuration for historical queries
+    return new ethers.JsonRpcProvider(SEPOLIA_RPC_URL, {
+      name: 'sepolia',
+      chainId: 11155111
+    });
   }
 }
 
 async function getContract() {
   const provider = await getProvider();
   if (provider) {
-    const signer = await provider.getSigner();
-    const response = await fetch('contracts/Dungeon.json'); // Adjust the path as needed
+    let contractRunner = provider;
+    if (typeof window.ethereum !== 'undefined') {
+      // Only try to get signer if MetaMask is available
+      try {
+        contractRunner = await provider.getSigner();
+      } catch (error) {
+        console.log("No signer available, using provider for read-only operations");
+      }
+    }
+    const response = await fetch('contracts/Dungeon.json');
     const contractABI = await response.json();
-    return new ethers.Contract(contractAddress, contractABI, signer);
+    return new ethers.Contract(contractAddress, contractABI, contractRunner);
   }
   return null;
 }
@@ -176,8 +187,13 @@ async function fetchDungeons() {
     try {
       // Get all DungeonCreated events
       const creationFilter = contract.filters.DungeonCreated(null, null, null);
-      const creationEvents = await contract.queryFilter(creationFilter);
-      console.log(creationEvents)
+      let creationEvents;
+      try {
+        creationEvents = await contract.queryFilter(creationFilter);
+      } catch (error) {
+        console.error("Error querying events:", error);
+        return []; // Return empty array if we can't query events
+      }
       
       // Get all Transfer events to address(0) which indicates burning/deletion
       const burnFilter = contract.filters.Transfer(null, '0x0000000000000000000000000000000000000000', null);
