@@ -10,7 +10,10 @@
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+    />
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -49,6 +52,12 @@
         position: relative;
         margin: 20px auto;
       }
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
@@ -67,10 +76,92 @@
         });
     </script>
 
-    <div id="map"></div>
-
     <div class="container mt-4">
-      <button class="btn btn-primary" onclick="startMintingProcess()">Mint Dungeon NFT</button>
+      <div id="map"></div>
+      <div class="btn-group mt-3" role="group" aria-label="Toggle Modes">
+        <button type="button" class="btn btn-secondary active" id="wall-mode">
+          Wall
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          id="enemy-mode"
+          disabled
+        >
+          Enemy
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          id="healing-mode"
+          disabled
+        >
+          Healing Circle
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          id="chest-mode"
+          disabled
+        >
+          Chest
+        </button>
+      </div>
+
+      <script>
+        let currentMode = null;
+
+        function setActiveMode(mode) {
+          currentMode = mode;
+          document.querySelectorAll(".btn-group .btn").forEach((button) => {
+            button.classList.remove("active");
+          });
+          document.getElementById(`${mode}-mode`).classList.add("active");
+        }
+
+        document.getElementById("wall-mode").addEventListener("click", () => {
+          setActiveMode("wall");
+        });
+
+        document.getElementById("enemy-mode").addEventListener("click", () => {
+          setActiveMode("enemy");
+        });
+
+        document
+          .getElementById("healing-mode")
+          .addEventListener("click", () => {
+            setActiveMode("healing");
+          });
+
+        document.getElementById("chest-mode").addEventListener("click", () => {
+          setActiveMode("chest");
+        });
+
+        document.querySelectorAll(".cell").forEach((cell, index) => {
+          const x = index % 20;
+          const y = Math.floor(index / 20);
+
+          cell.addEventListener("click", () => {
+            if (x === 0 || x === 19 || y === 0 || y === 19) return;
+
+            if (currentMode) {
+              cell.setAttribute(
+                "data-object",
+                JSON.stringify({ id: currentMode, rotation: 0 })
+              );
+              cell.classList.remove("wall", "start");
+              alert(
+                `${
+                  currentMode.charAt(0).toUpperCase() + currentMode.slice(1)
+                } placed!`
+              );
+            }
+          });
+        });
+      </script>
+      <button class="btn btn-primary mt-3" onclick="startMintingProcess()">
+        Mint Dungeon NFT
+      </button>
     </div>
 
     <div id="connect-placeholder"></div>
@@ -90,73 +181,84 @@
       for (let i = 0; i < 400; i++) {
         const cell = document.createElement("div");
         cell.classList.add("cell");
-        
+
         // Calculate x and y coordinates (0-19)
         const x = i % 20;
         const y = Math.floor(i / 20);
-        
+
         // Add boundary walls
         if (x === 0 || x === 19 || y === 0 || y === 19) {
           cell.classList.add("wall");
         }
-        
+
         // Add click handler
         cell.addEventListener("click", () => {
           // Don't allow clicking on boundary walls
           if (x === 0 || x === 19 || y === 0 || y === 19) return;
-          
+
           // Don't allow toggling wall if the cell is a start position or has an object
-          if (!cell.classList.contains('start') && !cell.hasAttribute('data-object')) {
+          if (
+            !cell.classList.contains("start") &&
+            !cell.hasAttribute("data-object")
+          ) {
             cell.classList.toggle("wall");
           }
         });
-        
+
         map.appendChild(cell);
       }
 
       // Add keyboard controls
       function updateCursor() {
         // Remove cursor from all cells
-        document.querySelectorAll('.cell').forEach(cell => cell.classList.remove('cursor'));
-        
+        document
+          .querySelectorAll(".cell")
+          .forEach((cell) => cell.classList.remove("cursor"));
+
         // Add cursor to current position
         const index = cursorPosition.y * 20 + cursorPosition.x;
-        document.querySelectorAll('.cell')[index].classList.add('cursor');
+        document.querySelectorAll(".cell")[index].classList.add("cursor");
       }
 
       // Add keyboard event listener
-      document.addEventListener('keydown', (e) => {
+      document.addEventListener("keydown", (e) => {
         const key = e.key;
-        
+
         // Store old position
         const oldX = cursorPosition.x;
         const oldY = cursorPosition.y;
-        
+
         // Update position based on key
-        switch(key) {
-          case 'ArrowUp':
+        switch (key) {
+          case "ArrowUp":
             if (cursorPosition.y > 1) cursorPosition.y--;
             break;
-          case 'ArrowDown':
+          case "ArrowDown":
             if (cursorPosition.y < 18) cursorPosition.y++;
             break;
-          case 'ArrowLeft':
+          case "ArrowLeft":
             if (cursorPosition.x > 1) cursorPosition.x--;
             break;
-          case 'ArrowRight':
+          case "ArrowRight":
             if (cursorPosition.x < 18) cursorPosition.x++;
             break;
-          case ' ': // Spacebar
+          case " ": // Spacebar
             const index = cursorPosition.y * 20 + cursorPosition.x;
-            const cell = document.querySelectorAll('.cell')[index];
+            const cell = document.querySelectorAll(".cell")[index];
             // Only toggle if not on boundary
-            if (!(cursorPosition.x === 0 || cursorPosition.x === 19 || 
-                  cursorPosition.y === 0 || cursorPosition.y === 19)) {
-              cell.classList.toggle('wall');
+            if (
+              !(
+                cursorPosition.x === 0 ||
+                cursorPosition.x === 19 ||
+                cursorPosition.y === 0 ||
+                cursorPosition.y === 19
+              )
+            ) {
+              cell.classList.toggle("wall");
             }
             break;
         }
-        
+
         updateCursor();
       });
 
@@ -170,89 +272,94 @@
         // First, handle start position
         alert("Click where you want the start position to be");
         await waitForStartPosition();
-        
+
         // Then, handle key position
         alert("Click where you want to place the key");
         await waitForKeyPosition();
-        
+
         // Finally, mint the dungeon
         mintDungeon(getMapData());
       }
 
       function waitForStartPosition() {
         return new Promise((resolve) => {
-          const cells = document.querySelectorAll('.cell');
-          
+          const cells = document.querySelectorAll(".cell");
+
           const clickHandler = (cell, x, y) => {
             // Remove previous start position if exists
-            document.querySelectorAll('.cell.start').forEach(c => {
-              c.classList.remove('start');
+            document.querySelectorAll(".cell.start").forEach((c) => {
+              c.classList.remove("start");
             });
-            
+
             // Add new start position and ensure it's not a wall
-            cell.classList.add('start');
-            cell.classList.remove('wall'); // Remove wall if it exists
+            cell.classList.add("start");
+            cell.classList.remove("wall"); // Remove wall if it exists
             startPosition = { x, y };
-            
+
             // Show confirmation
             alert("Start position marked in green!");
-            
+
             // Remove all click handlers
-            cells.forEach(c => c.removeEventListener('click', c.tempHandler));
+            cells.forEach((c) => c.removeEventListener("click", c.tempHandler));
             resolve();
           };
 
           cells.forEach((cell, index) => {
             const x = index % 20;
             const y = Math.floor(index / 20);
-            
+
             // Skip boundary walls
             if (x === 0 || x === 19 || y === 0 || y === 19) return;
-            
+
             // Store handler reference so we can remove it later
             cell.tempHandler = () => clickHandler(cell, x, y);
-            cell.addEventListener('click', cell.tempHandler);
+            cell.addEventListener("click", cell.tempHandler);
           });
         });
       }
 
       function waitForKeyPosition() {
         return new Promise((resolve) => {
-          const cells = document.querySelectorAll('.cell');
-          
+          const cells = document.querySelectorAll(".cell");
+
           const clickHandler = (cell, x, y) => {
             // Remove previous key if exists
-            document.querySelectorAll('.cell[data-object]').forEach(c => c.removeAttribute('data-object'));
-            
+            document
+              .querySelectorAll(".cell[data-object]")
+              .forEach((c) => c.removeAttribute("data-object"));
+
             // Add new key
-            cell.setAttribute('data-object', JSON.stringify({ id: "key", rotation: 0 }));
-            cell.classList.remove('wall', 'start');
+            cell.setAttribute(
+              "data-object",
+              JSON.stringify({ id: "key", rotation: 0 })
+            );
+            cell.classList.remove("wall", "start");
             keyPosition = { x, y };
-            
+
             // Show confirmation
             alert("Key position marked in blue!");
-            
+
             // Remove all click handlers
-            cells.forEach(c => c.removeEventListener('click', c.tempHandler));
+            cells.forEach((c) => c.removeEventListener("click", c.tempHandler));
             resolve();
           };
 
           cells.forEach((cell, index) => {
             const x = index % 20;
             const y = Math.floor(index / 20);
-            
+
             // Skip boundary walls
             if (x === 0 || x === 19 || y === 0 || y === 19) return;
-            
+
             // Store handler reference so we can remove it later
             cell.tempHandler = () => clickHandler(cell, x, y);
-            cell.addEventListener('click', cell.tempHandler);
+            cell.addEventListener("click", cell.tempHandler);
           });
         });
       }
 
       // Keep the existing CSS
-      const style = document.createElement('style');
+      const style = document.createElement("style");
       style.textContent = `
         .cell.start {
           background-color: #28a745;
@@ -266,39 +373,38 @@
       // Keep the existing getMapData function
       function getMapData() {
         const mapData = [];
-        const cells = document.querySelectorAll('.cell');
+        const cells = document.querySelectorAll(".cell");
         const width = 20;
         let row = [];
-        
+
         cells.forEach((cell, index) => {
           let cellData = {};
-          
-          if (cell.classList.contains('wall')) {
+
+          if (cell.classList.contains("wall")) {
             cellData = {
               wall: true,
-              texture: "rockwall"  // Default texture for walls
+              texture: "rockwall", // Default texture for walls
             };
-          } else if (cell.classList.contains('start')) {
+          } else if (cell.classList.contains("start")) {
             cellData = {
-              start: true
+              start: true,
             };
-          } else if (cell.hasAttribute('data-object')) {
+          } else if (cell.hasAttribute("data-object")) {
             cellData = {
-              objects: JSON.parse(cell.getAttribute('data-object'))
+              objects: JSON.parse(cell.getAttribute("data-object")),
             };
           }
-          
+
           row.push(cellData);
-          
+
           if ((index + 1) % width === 0) {
             mapData.push(row);
             row = [];
           }
         });
-        
+
         return mapData;
       }
-
     </script>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

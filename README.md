@@ -33,13 +33,21 @@ Platform: The game is playable on any browsers including mobile browsers.
 - Keyboard: W,A,S,D or arrow keys allows players to move forward, backwards, turn left or right
 - Touch/Mobile swipe: Players on touch devices can swipe the screen to perform the same actions as above
 
-## Building
+<img src="submission/screenshot/desktop.jpg" alt="Treasure Chest" width="400"/>
+<img src="submission/screenshot/mobile.jpg" alt="Treasure Chest" width="150"/>
+
+## Building Dungeons
 
 Building a dungeon can be done using the browser based map editor
 
 <img src="submission/screenshot/editor.jpg" alt="Treasure Chest" width="400"/>
 
 Walls can be specified with different textures.
+
+Controls:
+
+- Use mouse to click to draw the grid
+- You can also use the arrow keys and space bar to place the tiles.
 
 E.g.
 
@@ -57,7 +65,28 @@ Builders can add objects such as props or characters
 
 NFTs from other projects can be placed within dungeons to serve as rewards or decorations.
 
-<img src="submission/screenshot/collab.jpg" alt="Treasure Chest" width="200"/>
+<img src="submission/screenshot/collab.jpg" alt="Collab" width="200"/>
+
+<br>
+
+# Dungeons Gallery
+
+Dungeons can be listed to share with other players.
+Players can also choose to purchase dungeons that have been listed for sale here.
+
+<img src="submission/screenshot/gallery.jpg" alt="Gallery" width="600"/>
+
+<br>
+
+# Dungeons Management (My Dungeons)
+
+Owners of dungeons can manage dungeons linked to their wallet here.
+They can choose to sell a dungeon, add NFTs to it etc.
+Each dungeon has a snapshot of the map attached to make it easier to find them too.
+
+<img src="submission/screenshot/manage_dungeons.jpg" alt="Manage Dungeons" width="600"/>
+
+<br>
 
 # Smart Contracts
 
